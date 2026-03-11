@@ -12,16 +12,21 @@ body {
     justify-content: center;
     align-items: center;
     padding: 0;
+    margin: 0;
+    overflow: hidden; /* 防止body滚动 */
 }
 
 .app {
     width: 100%;
     max-width: 500px;
-    height: 100vh;
+    height: 100vh; /* 回退方案 */
+    height: 100dvh; /* 使用动态视口高度，解决手机浏览器问题 */
     background: white;
     display: flex;
     flex-direction: column;
     box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    overflow: hidden;
+    position: relative; /* 改为relative，不用fixed */
 }
 
 /* 头部 - 固定 */
@@ -33,7 +38,7 @@ body {
     align-items: center;
     background: #fefcf9;
     flex-shrink: 0;
-    height: 60px;
+    z-index: 10;
 }
 
 .header h1 {
@@ -53,29 +58,28 @@ body {
     cursor: pointer;
 }
 
-/* 主内容区域 - 占满剩余空间 */
+/* 主内容区域 - 可滚动 */
 .main-content {
     flex: 1;
     background: white;
-    overflow: hidden;  /* 防止整体滚动 */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
 }
 
 /* 主布局：左侧日期 + 右侧计划 */
 .main-layout {
     display: flex;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
     background: white;
 }
 
-/* 左侧日期栏 - 自己滚动 */
+/* 左侧日期栏 */
 .date-sidebar {
     width: 90px;
     background: #faf8f5;
     border-right: 1px solid #ece4d9;
     flex-shrink: 0;
-    overflow-y: auto;  /* 日期栏自己可以滚动 */
-    height: 100%;
 }
 
 .date-item {
@@ -109,13 +113,11 @@ body {
     color: #3d3228;
 }
 
-/* 右侧计划区 - 内部滚动 */
+/* 右侧计划区 */
 .plan-content {
     flex: 1;
     padding: 16px;
-    overflow-y: auto;  /* 只有这里滚动 */
     background: white;
-    height: 100%;
 }
 
 .selected-date-title {
@@ -243,11 +245,10 @@ body {
     background: #e5dcd0;
 }
 
-/* 菜谱库页 - 内部滚动 */
+/* 菜谱库页 */
 .recipe-page {
     padding: 16px;
-    height: 100%;
-    overflow-y: auto;
+    min-height: 100%;
 }
 
 .recipe-header {
@@ -304,11 +305,10 @@ body {
     gap: 6px;
 }
 
-/* 搜索页 - 内部滚动 */
+/* 搜索页 */
 .search-page {
     padding: 16px;
-    height: 100%;
-    overflow-y: auto;
+    min-height: 100%;
 }
 
 .search-input {
@@ -364,7 +364,7 @@ body {
     margin-bottom: 12px;
 }
 
-/* 底部导航 - 固定 */
+/* 底部导航 - 永远固定 */
 .bottom-nav {
     display: flex;
     justify-content: space-around;
@@ -372,7 +372,7 @@ body {
     border-top: 1px solid #f0e7db;
     background: white;
     flex-shrink: 0;
-    height: 50px;
+    z-index: 10;
 }
 
 .nav-item {
@@ -419,6 +419,7 @@ body {
     padding: 20px;
     max-height: 80vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-recipe-name {
