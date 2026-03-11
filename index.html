@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>🍳 料理日记</title>
+    <title>🍳 料理计划</title>
     <style>
         * {
             margin: 0;
@@ -71,7 +71,7 @@
             width: 90px;
             background: #faf8f5;
             border-right: 1px solid #ece4d9;
-            overflow-y: auto;
+            overflow-y: hidden; 
             flex-shrink: 0;
         }
 
@@ -461,15 +461,57 @@
         </div>
     </div>
 
+    <!-- 编辑菜谱弹窗 -->
+    <div class="modal" id="editRecipeModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 16px;">编辑菜谱</h3>
+            <input type="hidden" id="editRecipeId">
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 14px; color: #666; margin-bottom: 4px;">菜名</label>
+                <input type="text" id="editRecipeName" style="width: 100%; padding: 10px; border: 1px solid #e5dcd0; border-radius: 8px; font-size: 14px;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 14px; color: #666; margin-bottom: 4px;">分类</label>
+                <select id="editRecipeCategory" style="width: 100%; padding: 10px; border: 1px solid #e5dcd0; border-radius: 8px; font-size: 14px;">
+                    <option value="主食">🍚 主食</option>
+                    <option value="蔬菜">🥬 蔬菜</option>
+                    <option value="肉鱼">🐟 肉鱼</option>
+                    <option value="蛋">🥚 蛋</option>
+                    <option value="油脂">🥜 油脂</option>
+                    <option value="水果">🍎 水果</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 14px; color: #666; margin-bottom: 4px;">历史记录</label>
+                <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e5dcd0; border-radius: 8px; padding: 8px;" id="editHistoryList"></div>
+                <button style="margin-top: 8px; padding: 4px 8px; background: #f2ede7; border: none; border-radius: 20px; font-size: 12px; cursor: pointer;" id="addHistoryBtn">+ 添加记录</button>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 14px; color: #666; margin-bottom: 4px;">图片链接</label>
+                <input type="text" id="editRecipeImage" style="width: 100%; padding: 10px; border: 1px solid #e5dcd0; border-radius: 8px; font-size: 14px;" placeholder="选填">
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn btn-primary" id="saveRecipeBtn">保存</button>
+                <button class="modal-btn btn-secondary" id="deleteRecipeBtn">删除</button>
+                <button class="modal-btn btn-secondary" id="closeEditModal">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ---------- 数据 ----------
         const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-        // 生成本周日期
         const today = new Date();
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
 
+        // 调整到本周一（如果今天是周三，还是显示本周）
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1); // 周一
         const weekDates = [];
         for (let i = 0; i < 7; i++) {
             const d = new Date(startOfWeek);
@@ -543,6 +585,12 @@
                             ${d.isToday ? '<span class="date-tag">今</span>' : ''}
                         </div>
                     `).join('')}
+                    
+                    <!-- 左右箭头在这里 -->
+                    <div style="display: flex; justify-content: center; gap: 20px; padding: 6px 0; margin-top: 8px;">
+                        <span style="font-size: 18px; cursor: pointer;" id="prevWeekBtn">◀</span>
+                        <span style="font-size: 18px; cursor: pointer;" id="nextWeekBtn">▶</span>
+                    </div>
                 </div>
                 <div class="plan-content" id="planContent">
                     ${renderPlanContent()}
@@ -552,12 +600,14 @@
 
         function renderPlanContent() {
             const dayData = planData[selectedDate] || { breakfast: {}, lunch: {}, dinner: {} };
-            return `
-                <div class="selected-date-title">${selectedDate}</div>
-                ${renderMealSection('早餐', dayData.breakfast)}
-                ${renderMealSection('午餐', dayData.lunch)}
-                ${renderMealSection('晚餐', dayData.dinner)}
-            `;
+            let html = `<div class="selected-date-title">${selectedDate}</div>`;
+            
+            // 只有存在才渲染
+            if (dayData.breakfast) html += renderMealSection('早餐', dayData.breakfast);
+            if (dayData.lunch) html += renderMealSection('午餐', dayData.lunch);
+            if (dayData.dinner) html += renderMealSection('晚餐', dayData.dinner);
+            
+            return html;
         }
 
         function renderMealSection(title, mealData) {
@@ -566,6 +616,8 @@
                 <div class="meal-section">
                     <div class="meal-header">
                         <span class="arrow">▼</span> ${title}
+                        <span style="margin-left: auto; font-size: 14px; cursor: pointer; color: #999;" 
+                              class="delete-meal" data-meal="${title}">✕</span>
                     </div>
                     <div class="meal-content">
             `;
@@ -594,12 +646,13 @@
             return sectionHtml;
         }
 
-        function renderRecipeCard(name, count) {
+        function renderRecipeCard(name, count, showEdit = true) {
             return `
                 <div class="recipe-card" data-name="${name}">
                     <div class="card-image"></div>
                     <div class="recipe-name">${name}</div>
                     ${count > 0 ? `<div class="red-dot">${count}</div>` : ''}
+                    ${showEdit ? '<span class="edit-icon" style="position: absolute; bottom: 2px; right: 2px; font-size: 12px; cursor: pointer; background: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd;">✎</span>' : ''}
                 </div>
             `;
         }
@@ -634,12 +687,104 @@
                 });
             });
             
+            // ========== 删除整餐 ==========
+            document.querySelectorAll('.delete-meal').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const meal = btn.dataset.meal; // '早餐', '午餐', '晚餐'
+                    const mealMap = { '早餐': 'breakfast', '午餐': 'lunch', '晚餐': 'dinner' };
+                    const mealKey = mealMap[meal];
+                    
+                    if (planData[selectedDate] && planData[selectedDate][mealKey]) {
+                        // 删除整个餐段
+                        delete planData[selectedDate][mealKey];
+                        
+                        // 重新渲染
+                        document.getElementById('planContent').innerHTML = renderPlanContent();
+                        
+                        // 重新绑定事件
+                        setTimeout(() => {
+                            initPlanEvents();
+                        }, 0);
+                    }
+                });
+            });
+            // ==============================
+            
             // 菜谱卡片点击
             document.querySelectorAll('.recipe-card').forEach(card => {
                 card.addEventListener('click', () => {
                     const recipe = recipes.find(r => r.name === card.dataset.name);
                     if (recipe) showRecipeModal(recipe);
                 });
+            });
+            
+            // 上一周箭头
+            document.getElementById('prevWeekBtn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // 保存当前周的数据到临时变量
+                const oldPlanData = { ...planData };
+                
+                // 所有日期减7天
+                weekDates.forEach(d => {
+                    d.fullDate.setDate(d.fullDate.getDate() - 7);
+                    const month = d.fullDate.getMonth() + 1;
+                    const day = d.fullDate.getDate();
+                    const newDateStr = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
+                    
+                    // 如果新日期有旧数据，就保留；否则创建空数据
+                    if (oldPlanData[newDateStr]) {
+                        planData[newDateStr] = oldPlanData[newDateStr];
+                    } else {
+                        planData[newDateStr] = { 
+                            breakfast: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                            lunch: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                            dinner: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] }
+                        };
+                    }
+                    
+                    d.dateStr = newDateStr;
+                    d.isToday = d.fullDate.toDateString() === today.toDateString();
+                });
+                
+                selectedDate = weekDates.find(d => d.isToday)?.dateStr || weekDates[0].dateStr;
+                showPage('plan');
+            });
+
+            // 下一周箭头
+            document.getElementById('nextWeekBtn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                // 保存当前周的数据到临时变量
+                const oldPlanData = { ...planData };
+                
+                // 所有日期加7天
+                weekDates.forEach(d => {
+                    d.fullDate.setDate(d.fullDate.getDate() + 7);
+                    const month = d.fullDate.getMonth() + 1;
+                    const day = d.fullDate.getDate();
+                    const newDateStr = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`;
+                    
+                    // 如果新日期有旧数据，就保留；否则创建空数据
+                    if (oldPlanData[newDateStr]) {
+                        planData[newDateStr] = oldPlanData[newDateStr];
+                    } else {
+                        planData[newDateStr] = { 
+                            breakfast: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                            lunch: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                            dinner: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] }
+                        };
+                    }
+                    
+                    d.dateStr = newDateStr;
+                    d.isToday = d.fullDate.toDateString() === today.toDateString();
+                });
+                
+                selectedDate = weekDates.find(d => d.isToday)?.dateStr || weekDates[0].dateStr;
+                showPage('plan');
             });
         }
 
@@ -754,10 +899,24 @@
             ).join('');
 
             document.querySelectorAll('#libraryGrid .recipe-card').forEach(card => {
-                card.addEventListener('click', () => {
+                // 点击卡片主体显示详情
+                card.addEventListener('click', (e) => {
+                    // 如果点击的是编辑图标，不触发
+                    if (e.target.classList.contains('edit-icon')) return;
+                    
                     const recipe = recipes.find(r => r.name === card.dataset.name);
                     if (recipe) showRecipeModal(recipe);
                 });
+                
+                // 点击编辑图标
+                const editIcon = card.querySelector('.edit-icon');
+                if (editIcon) {
+                    editIcon.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const recipe = recipes.find(r => r.name === card.dataset.name);
+                        if (recipe) showEditRecipeModal(recipe);
+                    });
+                }
             });
         }
 
@@ -794,6 +953,101 @@
             document.getElementById('historyList').innerHTML = historyHtml;
             document.getElementById('recipeModal').classList.add('active');
         }
+
+        // ---------- 编辑菜谱 ----------
+        function showEditRecipeModal(recipe) {
+            document.getElementById('editRecipeId').value = recipe.id;
+            document.getElementById('editRecipeName').value = recipe.name;
+            document.getElementById('editRecipeCategory').value = recipe.category;
+            document.getElementById('editRecipeImage').value = recipe.image || '';
+            
+            // 渲染历史记录
+            renderHistoryList(recipe.history);
+            
+            document.getElementById('editRecipeModal').classList.add('active');
+        }
+
+        function renderHistoryList(history) {
+            const container = document.getElementById('editHistoryList');
+            container.innerHTML = '';
+            
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #eee;';
+                div.innerHTML = `
+                    <span style="font-size: 13px;">${item}</span>
+                    <span style="color: #999; cursor: pointer; font-size: 16px;" class="remove-history" data-index="${index}">✕</span>
+                `;
+                container.appendChild(div);
+            });
+            
+            // 移除历史记录事件
+            document.querySelectorAll('.remove-history').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = btn.dataset.index;
+                    const recipeId = document.getElementById('editRecipeId').value;
+                    const recipe = recipes.find(r => r.id == recipeId);
+                    if (recipe) {
+                        recipe.history.splice(index, 1);
+                        renderHistoryList(recipe.history);
+                    }
+                });
+            });
+        }
+
+        // 添加历史记录
+        document.getElementById('addHistoryBtn')?.addEventListener('click', () => {
+            const newRecord = prompt('输入新记录 (格式: 03/11早餐)');
+            if (newRecord) {
+                const recipeId = document.getElementById('editRecipeId').value;
+                const recipe = recipes.find(r => r.id == recipeId);
+                if (recipe) {
+                    recipe.history.unshift(newRecord);
+                    renderHistoryList(recipe.history);
+                }
+            }
+        });
+
+        // 保存编辑
+        document.getElementById('saveRecipeBtn')?.addEventListener('click', () => {
+            const recipeId = document.getElementById('editRecipeId').value;
+            const recipe = recipes.find(r => r.id == recipeId);
+            if (recipe) {
+                recipe.name = document.getElementById('editRecipeName').value;
+                recipe.category = document.getElementById('editRecipeCategory').value;
+                recipe.image = document.getElementById('editRecipeImage').value;
+                
+                // 刷新菜谱库
+                if (document.querySelector('.nav-item.active').dataset.page === 'recipe') {
+                    renderLibrary();
+                }
+                
+                document.getElementById('editRecipeModal').classList.remove('active');
+            }
+        });
+
+        // 删除菜谱
+        document.getElementById('deleteRecipeBtn')?.addEventListener('click', () => {
+            if (confirm('确定删除这个菜谱吗？')) {
+                const recipeId = document.getElementById('editRecipeId').value;
+                const index = recipes.findIndex(r => r.id == recipeId);
+                if (index !== -1) {
+                    recipes.splice(index, 1);
+                    
+                    // 刷新菜谱库
+                    if (document.querySelector('.nav-item.active').dataset.page === 'recipe') {
+                        renderLibrary();
+                    }
+                    
+                    document.getElementById('editRecipeModal').classList.remove('active');
+                }
+            }
+        });
+
+        // 关闭编辑弹窗
+        document.getElementById('closeEditModal')?.addEventListener('click', () => {
+            document.getElementById('editRecipeModal').classList.remove('active');
+        });
 
         // ---------- 初始化 ----------
         function init() {
