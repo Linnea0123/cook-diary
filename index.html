@@ -4,7 +4,417 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>🍳 料理日记</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f2ec;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 头部 */
+        .header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0e9df;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fefcf9;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #3a342b;
+        }
+
+        .header button {
+            background: #eae3d8;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #3a342b;
+            border: 1px solid #ddd0c0;
+            cursor: pointer;
+        }
+
+        /* 主布局：左侧日期 + 右侧计划 */
+        .main-layout {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: white;
+        }
+
+        /* 左侧日期栏（窄窄的） */
+        .date-sidebar {
+            width: 90px;
+            background: #faf8f5;
+            border-right: 1px solid #ece4d9;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .date-item {
+            padding: 16px 6px;
+            text-align: center;
+            font-size: 14px;
+            color: #5e5548;
+            border-bottom: 1px solid #ece4d9;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .date-item:last-child {
+            border-bottom: none;
+        }
+
+        .date-item.active {
+            background: #e6ded2;
+            color: #2c241b;
+            font-weight: 500;
+            border-left: 3px solid #b8a68b;
+        }
+
+        .date-tag {
+            display: inline-block;
+            background: #d1c5b6;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 20px;
+            margin-top: 4px;
+            color: #3d3228;
+        }
+
+        /* 右侧计划区 */
+        .plan-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .selected-date-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #2c241b;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0e7db;
+        }
+
+        /* 三餐区块 */
+        .meal-section {
+            margin-bottom: 16px;
+            border: 1px solid #f0e7db;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .meal-header {
+            background: #faf6f1;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #3f382f;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meal-header .arrow {
+            transition: transform 0.15s;
+            font-size: 12px;
+            color: #ab9a86;
+        }
+
+        .meal-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .meal-content {
+            padding: 12px;
+        }
+
+        .meal-content.collapsed {
+            display: none;
+        }
+
+        /* 分类行 */
+        .category-row {
+            margin-bottom: 16px;
+        }
+
+        .category-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #716957;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #e5dcd0;
+            padding-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* 菜谱卡片 */
+        .recipe-card {
+            width: calc(25% - 5px);
+            min-width: 60px;
+            background: #fdfbf9;
+            border: 1px solid #e5dcd0;
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-image {
+            height: 50px;
+            background: #f2ede7;
+            border-bottom: 1px solid #e5dcd0;
+        }
+
+        .recipe-name {
+            padding: 5px 2px;
+            font-size: 11px;
+            color: #3f382f;
+            word-break: break-word;
+        }
+
+        /* 小红点 */
+        .red-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #e06b6b;
+            color: white;
+            font-size: 9px;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 加号按钮 */
+        .add-btn-small {
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 20px;
+            background: #f2ede7;
+        }
+
+        .add-btn-small:hover {
+            background: #e5dcd0;
+        }
+
+        /* 菜谱库页 */
+        .recipe-page {
+            width: 100%;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .recipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .recipe-header h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #3a342b;
+        }
+
+        .search-box {
+            background: #f5f2ec;
+            border: 1px solid #e5dcd0;
+            border-radius: 30px;
+            padding: 6px 14px;
+            width: 160px;
+            font-size: 13px;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding: 4px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-tag {
+            padding: 5px 12px;
+            background: #f5f2ec;
+            border-radius: 30px;
+            font-size: 12px;
+            color: #5e5548;
+            white-space: nowrap;
+            border: 1px solid #e5dcd0;
+            cursor: pointer;
+        }
+
+        .filter-tag.active {
+            background: #d1c5b6;
+            color: #2c241b;
+            border-color: #b8a68b;
+        }
+
+        .library-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px 6px;
+            border-top: 1px solid #f0e7db;
+            background: white;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #8f8579;
+        }
+
+        .nav-item.active {
+            background: #f2ede7;
+            color: #2c241b;
+            font-weight: 500;
+        }
+
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 380px;
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-recipe-name {
+            font-size: 20px;
+            font-weight: 500;
+            margin: 8px 0;
+        }
+
+        .modal-stats {
+            background: #f9f5f0;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 12px 0;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f9f5f0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+
+        .history-item {
+            padding: 4px 0;
+            border-bottom: 1px dashed #e5dcd0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #d1c5b6;
+            color: #2c241b;
+        }
+
+        .btn-secondary {
+            background: #f2ede7;
+            color: #5e5548;
+        }
+    </style>
 </head>
 <body>
     <div class="app">
@@ -51,6 +461,362 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // ---------- 数据 ----------
+        const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+        // 生成本周日期
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+
+        const weekDates = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            const month = d.getMonth() + 1;
+            const day = d.getDate();
+            weekDates.push({
+                dateStr: `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}`,
+                fullDate: d,
+                isToday: d.toDateString() === today.toDateString()
+            });
+        }
+
+        // 计划数据
+        let planData = {};
+        weekDates.forEach(d => {
+            planData[d.dateStr] = { 
+                breakfast: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                lunch: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] },
+                dinner: { '主食': [], '蔬菜': [], '肉鱼': [], '蛋': [], '油脂': [], '水果': [] }
+            };
+        });
+
+        // 菜谱库
+        let recipes = [
+            { id: 1, name: '鳕鱼饼', category: '肉鱼', history: ['03/11早餐', '03/09午餐', '03/05晚餐'] },
+            { id: 2, name: '蒸蛋', category: '蛋', history: ['03/11早餐', '03/08早餐', '03/06早餐', '03/03早餐', '03/01早餐'] },
+            { id: 3, name: '炒鸡蛋', category: '蛋', history: ['03/11早餐', '03/10午餐', '03/07早餐', '03/04早餐'] },
+            { id: 4, name: '西蓝花', category: '蔬菜', history: ['03/11早餐', '03/09晚餐'] },
+            { id: 5, name: '蓝莓', category: '水果', history: ['03/11早餐', '03/08水果'] },
+            { id: 6, name: '腰果', category: '油脂', history: ['03/11早餐'] },
+            { id: 7, name: '藕片', category: '蔬菜', history: ['03/12午餐'] },
+            { id: 8, name: '球生菜', category: '蔬菜', history: [] },
+            { id: 9, name: '蝴蝶面', category: '主食', history: ['03/11早餐'] },
+            { id: 10, name: '米饭', category: '主食', history: ['03/10午餐'] }
+        ];
+
+        let selectedDate = weekDates.find(d => d.isToday)?.dateStr || weekDates[0].dateStr;
+        let selectedCategory = '';
+        let selectedMeal = '';
+
+        // ---------- 页面切换 ----------
+        function showPage(page) {
+            const mainLayout = document.getElementById('mainLayout');
+            const headerBtn = document.getElementById('newRecipeBtn');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.page === page);
+            });
+            
+            headerBtn.style.display = page === 'recipe' ? 'block' : 'none';
+            
+            if (page === 'plan') {
+                mainLayout.innerHTML = renderPlanPage();
+                initPlanEvents();
+            } else if (page === 'recipe') {
+                mainLayout.innerHTML = renderRecipePage();
+                initRecipeEvents();
+            } else if (page === 'search') {
+                mainLayout.innerHTML = renderSearchPage();
+            }
+        }
+
+        // ---------- 计划页 ----------
+        function renderPlanPage() {
+            return `
+                <div class="date-sidebar" id="dateSidebar">
+                    ${weekDates.map((d, index) => `
+                        <div class="date-item ${d.dateStr === selectedDate ? 'active' : ''}" data-date="${d.dateStr}">
+                            ${weekDays[index]}<br>${d.dateStr}
+                            ${d.isToday ? '<span class="date-tag">今</span>' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="plan-content" id="planContent">
+                    ${renderPlanContent()}
+                </div>
+            `;
+        }
+
+        function renderPlanContent() {
+            const dayData = planData[selectedDate] || { breakfast: {}, lunch: {}, dinner: {} };
+            return `
+                <div class="selected-date-title">${selectedDate}</div>
+                ${renderMealSection('早餐', dayData.breakfast)}
+                ${renderMealSection('午餐', dayData.lunch)}
+                ${renderMealSection('晚餐', dayData.dinner)}
+            `;
+        }
+
+        function renderMealSection(title, mealData) {
+            const categories = ['主食', '蔬菜', '肉鱼', '蛋', '油脂', '水果'];
+            let sectionHtml = `
+                <div class="meal-section">
+                    <div class="meal-header">
+                        <span class="arrow">▼</span> ${title}
+                    </div>
+                    <div class="meal-content">
+            `;
+
+            categories.forEach(cat => {
+                const catRecipes = mealData[cat] || [];
+                sectionHtml += `
+                    <div class="category-row">
+                        <div class="category-title">
+                            <span>${cat}</span>
+                            <span class="add-btn-small" data-meal="${title}" data-category="${cat}">➕</span>
+                        </div>
+                        <div class="card-grid" data-meal="${title}" data-category="${cat}">
+                `;
+                
+                catRecipes.forEach(recipeName => {
+                    const recipe = recipes.find(r => r.name === recipeName);
+                    const count = recipe ? recipe.history.length : 0;
+                    sectionHtml += renderRecipeCard(recipeName, count);
+                });
+
+                sectionHtml += `</div></div>`;
+            });
+
+            sectionHtml += `</div></div>`;
+            return sectionHtml;
+        }
+
+        function renderRecipeCard(name, count) {
+            return `
+                <div class="recipe-card" data-name="${name}">
+                    <div class="card-image"></div>
+                    <div class="recipe-name">${name}</div>
+                    ${count > 0 ? `<div class="red-dot">${count}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function initPlanEvents() {
+            // 日期点击
+            document.querySelectorAll('.date-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    document.querySelectorAll('.date-item').forEach(d => d.classList.remove('active'));
+                    el.classList.add('active');
+                    selectedDate = el.dataset.date;
+                    document.getElementById('planContent').innerHTML = renderPlanContent();
+                    initPlanEvents();
+                });
+            });
+            
+            // 折叠
+            document.querySelectorAll('.meal-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    header.classList.toggle('collapsed');
+                    header.nextElementSibling.classList.toggle('collapsed');
+                });
+            });
+            
+            // 加号点击
+            document.querySelectorAll('.add-btn-small').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedMeal = btn.dataset.meal;
+                    selectedCategory = btn.dataset.category;
+                    showSelectRecipeModal(selectedCategory);
+                });
+            });
+            
+            // 菜谱卡片点击
+            document.querySelectorAll('.recipe-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const recipe = recipes.find(r => r.name === card.dataset.name);
+                    if (recipe) showRecipeModal(recipe);
+                });
+            });
+        }
+
+        // ---------- 选择菜谱弹窗 ----------
+        function showSelectRecipeModal(category) {
+            const modal = document.getElementById('selectRecipeModal');
+            document.getElementById('selectModalTitle').textContent = `选择${category}`;
+            
+            const filteredRecipes = recipes.filter(r => r.category === category);
+            const grid = document.getElementById('selectRecipeGrid');
+            
+            grid.innerHTML = filteredRecipes.map(recipe => 
+                renderRecipeCard(recipe.name, recipe.history.length)
+            ).join('');
+            
+            modal.classList.add('active');
+            
+            // 菜谱点击
+            grid.querySelectorAll('.recipe-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const recipeName = card.dataset.name;
+                    addToPlan(recipeName);
+                    modal.classList.remove('active');
+                });
+            });
+            
+            document.getElementById('closeSelectModal').addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+        }
+
+        function addToPlan(recipeName) {
+            if (!selectedMeal || !selectedCategory) return;
+            
+            const mealMap = { '早餐': 'breakfast', '午餐': 'lunch', '晚餐': 'dinner' };
+            const mealKey = mealMap[selectedMeal];
+            
+            if (!planData[selectedDate][mealKey][selectedCategory]) {
+                planData[selectedDate][mealKey][selectedCategory] = [];
+            }
+            
+            // 避免重复添加
+            if (!planData[selectedDate][mealKey][selectedCategory].includes(recipeName)) {
+                planData[selectedDate][mealKey][selectedCategory].push(recipeName);
+            }
+            
+            // 更新历史
+            const recipe = recipes.find(r => r.name === recipeName);
+            if (recipe) {
+                const todayStr = `${selectedDate}${selectedMeal}`;
+                if (!recipe.history.includes(todayStr)) {
+                    recipe.history.unshift(todayStr);
+                }
+            }
+            
+            document.getElementById('planContent').innerHTML = renderPlanContent();
+            initPlanEvents();
+        }
+
+        // ---------- 菜谱库页 ----------
+        function renderRecipePage() {
+            return `
+                <div class="recipe-page">
+                    <div class="recipe-header">
+                        <h2>📖 菜谱库</h2>
+                        <input type="text" class="search-box" id="recipeSearch" placeholder="搜索...">
+                    </div>
+                    <div class="category-filter" id="categoryFilter">
+                        <span class="filter-tag active" data-category="all">全部</span>
+                        <span class="filter-tag" data-category="主食">🍚 主食</span>
+                        <span class="filter-tag" data-category="蔬菜">🥬 蔬菜</span>
+                        <span class="filter-tag" data-category="肉鱼">🐟 肉鱼</span>
+                        <span class="filter-tag" data-category="蛋">🥚 蛋</span>
+                        <span class="filter-tag" data-category="油脂">🥜 油脂</span>
+                        <span class="filter-tag" data-category="水果">🍎 水果</span>
+                    </div>
+                    <div class="library-grid" id="libraryGrid"></div>
+                </div>
+            `;
+        }
+
+        function initRecipeEvents() {
+            renderLibrary();
+            
+            document.querySelectorAll('.filter-tag').forEach(tag => {
+                tag.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                    tag.classList.add('active');
+                    renderLibrary(tag.dataset.category, document.getElementById('recipeSearch').value);
+                });
+            });
+            
+            document.getElementById('recipeSearch').addEventListener('input', (e) => {
+                const activeCat = document.querySelector('.filter-tag.active').dataset.category;
+                renderLibrary(activeCat, e.target.value);
+            });
+        }
+
+        function renderLibrary(category = 'all', search = '') {
+            const grid = document.getElementById('libraryGrid');
+            let filtered = recipes;
+
+            if (category !== 'all') {
+                filtered = filtered.filter(r => r.category === category);
+            }
+            if (search) {
+                filtered = filtered.filter(r => r.name.includes(search));
+            }
+
+            grid.innerHTML = filtered.map(recipe => 
+                renderRecipeCard(recipe.name, recipe.history.length)
+            ).join('');
+
+            document.querySelectorAll('#libraryGrid .recipe-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const recipe = recipes.find(r => r.name === card.dataset.name);
+                    if (recipe) showRecipeModal(recipe);
+                });
+            });
+        }
+
+        // ---------- 搜索页 ----------
+        function renderSearchPage() {
+            return `
+                <div style="width: 100%; padding: 16px;">
+                    <input type="text" class="search-box" style="width: 100%; margin-bottom: 20px; padding: 10px;" placeholder="搜索菜谱...">
+                    <div style="font-size: 14px; color: #8f8579; margin-bottom: 12px;">最近搜索</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <span class="filter-tag">鳕鱼</span>
+                        <span class="filter-tag">鸡蛋</span>
+                        <span class="filter-tag">西蓝花</span>
+                        <span class="filter-tag">牛肉</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---------- 弹窗 ----------
+        function showRecipeModal(recipe) {
+            document.getElementById('modalRecipeName').textContent = recipe.name;
+            document.getElementById('totalCount').textContent = recipe.history.length + '次';
+            
+            const monthCount = recipe.history.filter(h => h.includes('03/')).length;
+            document.getElementById('monthCount').textContent = monthCount + '次';
+            
+            document.getElementById('lastTime').textContent = recipe.history[0] || '暂无';
+            
+            const historyHtml = recipe.history.slice(0, 10).map(h => 
+                `<div class="history-item">• ${h}</div>`
+            ).join('') || '<div class="history-item">暂无记录</div>';
+            
+            document.getElementById('historyList').innerHTML = historyHtml;
+            document.getElementById('recipeModal').classList.add('active');
+        }
+
+        // ---------- 初始化 ----------
+        function init() {
+            // 导航点击
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => showPage(item.dataset.page));
+            });
+            
+            // 默认显示计划页
+            showPage('plan');
+            
+            // 关闭弹窗
+            document.getElementById('closeModalBtn').addEventListener('click', () => {
+                document.getElementById('recipeModal').classList.remove('active');
+            });
+            
+            // 新建菜谱
+            document.getElementById('newRecipeBtn').addEventListener('click', () => {
+                alert('新建菜谱功能开发中，可以直接修改recipes数组');
+            });
+        }
+
+        init();
+    </script>
 </body>
 </html>
