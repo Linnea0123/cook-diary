@@ -883,44 +883,48 @@
             });
         }
 
-        function renderLibrary(category = 'all', search = '') {
-            const grid = document.getElementById('libraryGrid');
-            let filtered = recipes;
+function renderLibrary(category = 'all', search = '') {
+    const grid = document.getElementById('libraryGrid');
+    let filtered = recipes;
 
-            if (category !== 'all') {
-                filtered = filtered.filter(r => r.category === category);
-            }
-            if (search) {
-                filtered = filtered.filter(r => r.name.includes(search));
-            }
+    if (category !== 'all') {
+        filtered = filtered.filter(r => r.category === category);
+    }
+    if (search) {
+        filtered = filtered.filter(r => r.name.includes(search));
+    }
 
-            grid.innerHTML = filtered.map(recipe => 
-                renderRecipeCard(recipe.name, recipe.history.length)
-            ).join('');
+    grid.innerHTML = filtered.map(recipe => 
+        renderRecipeCard(recipe.name, recipe.history.length)
+    ).join('');
 
-            document.querySelectorAll('#libraryGrid .recipe-card').forEach(card => {
-                // 点击卡片主体显示详情
-                card.addEventListener('click', (e) => {
-                    // 如果点击的是编辑图标，不触发
-                    if (e.target.classList.contains('edit-icon')) return;
-                    
-                    const recipe = recipes.find(r => r.name === card.dataset.name);
-                    if (recipe) showRecipeModal(recipe);
-                });
+    // 重新绑定事件 - 不用setTimeout，直接绑定
+    document.querySelectorAll('#libraryGrid .recipe-card').forEach(card => {
+        // 点击卡片主体显示详情
+        card.addEventListener('click', (e) => {
+            // 如果点击的是编辑图标，不触发
+            if (e.target.classList.contains('edit-icon')) {
+                e.stopPropagation();
+                e.preventDefault();
                 
-                // 点击编辑图标
-                const editIcon = card.querySelector('.edit-icon');
-                if (editIcon) {
-                    editIcon.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const recipe = recipes.find(r => r.name === card.dataset.name);
-                        if (recipe) showEditRecipeModal(recipe);
-                    });
+                // 手动触发编辑
+                const recipe = recipes.find(r => r.name === card.dataset.name);
+                if (recipe) {
+                    console.log('编辑图标被点击:', recipe.name);
+                    showEditRecipeModal(recipe);
                 }
-            });
-        }
+                return;
+            }
+            
+            // 否则显示详情
+            const recipe = recipes.find(r => r.name === card.dataset.name);
+            if (recipe) showRecipeModal(recipe);
+        });
+    });
+}   
 
-        // ---------- 搜索页 ----------
+
+// ---------- 搜索页 ----------
         function renderSearchPage() {
             return `
                 <div style="width: 100%; padding: 16px;">
