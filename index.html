@@ -2,50 +2,26 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍳 料理日记 · 本周计划</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>🍳 料理日记</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app">
         <!-- 头部 -->
         <div class="header">
-            <h1>🍳 料理日记 · 本周计划</h1>
-            <button>+ 新建菜谱</button>
+            <h1>🍳 料理日记</h1>
+            <button id="newRecipeBtn" style="display: none;">+ 新建菜谱</button>
         </div>
 
-        <!-- 主布局：左侧日期 + 右侧三餐 -->
-        <div class="main-layout">
-            <!-- 左侧日期栏（窄） -->
-            <div class="date-sidebar" id="dateSidebar"></div>
-
-            <!-- 右侧内容区 -->
-            <div class="right-content" id="rightContent"></div>
-        </div>
-
-        <!-- 菜谱库区域 -->
-        <div class="recipe-library">
-            <div class="library-header">
-                <h2>📖 菜谱库</h2>
-                <input type="text" class="search-box" placeholder="搜索菜谱...">
-            </div>
-            <div class="category-filter" id="categoryFilter">
-                <span class="filter-tag active" data-category="all">全部</span>
-                <span class="filter-tag" data-category="主食">🍚 主食</span>
-                <span class="filter-tag" data-category="蔬菜">🥬 蔬菜</span>
-                <span class="filter-tag" data-category="肉鱼">🐟 肉鱼</span>
-                <span class="filter-tag" data-category="蛋">🥚 蛋</span>
-                <span class="filter-tag" data-category="油脂">🥜 油脂</span>
-                <span class="filter-tag" data-category="水果">🍎 水果</span>
-            </div>
-            <div class="library-grid" id="libraryGrid"></div>
-        </div>
+        <!-- 主布局：左侧日期 + 右侧计划 -->
+        <div class="main-layout" id="mainLayout"></div>
 
         <!-- 底部导航 -->
         <div class="bottom-nav">
-            <div class="nav-item active">📅 计划</div>
-            <div class="nav-item">📖 菜谱</div>
-            <div class="nav-item">🔍 搜索</div>
+            <div class="nav-item active" data-page="plan">📅 计划</div>
+            <div class="nav-item" data-page="recipe">📖 菜谱</div>
+            <div class="nav-item" data-page="search">🔍 搜索</div>
         </div>
     </div>
 
@@ -54,24 +30,24 @@
         <div class="modal-content">
             <div style="text-align: center; font-size: 48px;">🍳</div>
             <div class="modal-recipe-name" id="modalRecipeName">鳕鱼饼</div>
-            
             <div class="modal-stats">
                 <div class="stat-item"><span>总次数：</span><span id="totalCount">8次</span></div>
                 <div class="stat-item"><span>近30天：</span><span id="monthCount">3次</span></div>
                 <div class="stat-item"><span>上次：</span><span id="lastTime">03/11 早餐</span></div>
             </div>
-
-            <div class="history-list" id="historyList">
-                <div class="history-item">• 03/11 早餐</div>
-                <div class="history-item">• 03/09 午餐</div>
-                <div class="history-item">• 03/05 晚餐</div>
-            </div>
-
+            <div class="history-list" id="historyList"></div>
             <div class="modal-buttons">
-                <button class="modal-btn btn-primary" id="addToPlanBtn">加到今日</button>
-                <button class="modal-btn btn-secondary" id="editRecipeBtn">编辑</button>
                 <button class="modal-btn btn-secondary" id="closeModalBtn">关闭</button>
             </div>
+        </div>
+    </div>
+
+    <!-- 选择菜谱弹窗 -->
+    <div class="modal" id="selectRecipeModal">
+        <div class="modal-content" style="max-width: 350px;">
+            <h3 style="margin-bottom: 16px;" id="selectModalTitle">选择菜谱</h3>
+            <div class="library-grid" id="selectRecipeGrid" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px;"></div>
+            <button class="modal-btn btn-secondary" id="closeSelectModal">取消</button>
         </div>
     </div>
 
