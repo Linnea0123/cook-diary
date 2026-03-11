@@ -18,18 +18,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
             padding: 0;
         }
 
-        .app {
-            width: 100%;
-            max-width: 500px;
-            height: 100vh;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
-        }
+       .app {
+    width: 100%;
+    max-width: 500px;
+    height: 100dvh;
 
         /* 头部 - 固定 */
         .header {
@@ -59,13 +55,13 @@
             cursor: pointer;
         }
 
-        /* 主内容区域 - 占满剩余空间 */
-        .main-content {
-            flex: 1;
-            background: white;
-            overflow: hidden;
-            min-height: 0; /* 重要：防止flex溢出 */
-        }
+       .main-content {
+    flex: 1;
+    background: white;
+    overflow: hidden;
+    min-height: 0;
+    padding-bottom: 80px;
+}
 
         /* 主布局：左侧日期 + 右侧计划 */
         .main-layout {
@@ -376,14 +372,26 @@
         }
 
         /* 底部导航 - 永远固定 */
-        .bottom-nav {
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 12px 6px;
-            border-top: 1px solid #f0e7db;
-            background: white;
-            flex-shrink: 0;
-        }
+       .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    max-width: 500px;
+    margin: 0 auto;
+
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+
+    border-top: 1px solid #f0e7db;
+    background: white;
+
+    z-index: 1000;
+}
 
         .nav-item {
             display: flex;
