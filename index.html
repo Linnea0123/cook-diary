@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>🍳 料理计划</title>
+    <title>🍳 料理计划 · 固定导航</title>
     <style>
         * {
             margin: 0;
@@ -18,16 +18,23 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
             padding: 0;
         }
 
-       .app {
-    width: 100%;
-    max-width: 500px;
-    height: 100dvh;
+        /* 整个app采用flex列，高度100vh，确保底部导航永远贴在视口底部 */
+        .app {
+            width: 100%;
+            max-width: 500px;
+            height: 100vh;                /* 固定视口高度 */
+            background: white;
+            display: flex;
+            flex-direction: column;       /* 头部 + 中间内容(伸缩) + 底部导航 */
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;              /* 防止整体滚动，内部区域各自滚动 */
+        }
 
-        /* 头部 - 固定 */
+        /* 头部 - 固定在app顶部 (不随内容滚动) */
         .header {
             padding: 12px 16px;
             border-bottom: 1px solid #f0e9df;
@@ -35,7 +42,7 @@
             justify-content: space-between;
             align-items: center;
             background: #fefcf9;
-            flex-shrink: 0;
+            flex-shrink: 0;                /* 防止被压缩 */
         }
 
         .header h1 {
@@ -55,19 +62,20 @@
             cursor: pointer;
         }
 
-       .main-content {
-    flex: 1;
-    background: white;
-    overflow: hidden;
-    min-height: 0;
-    padding-bottom: 80px;
-}
+        /* 主内容区域 - 占满剩余空间，并且自己负责滚动 */
+        .main-content {
+            flex: 1;                       /* 自动撑满头部和底部之间的空间 */
+            background: white;
+            overflow-y: auto;               /* 内部滚动，而不是整个app滚动 */
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;                  /* flex限制溢出 */
+        }
 
-        /* 主布局：左侧日期 + 右侧计划 */
+        /* 主布局：左侧日期 + 右侧计划，两者都在main-content内滚动 */
         .main-layout {
             display: flex;
-            height: 100%;
-            overflow: hidden;
+            height: 100%;                  /* 填满main-content */
+            overflow: hidden;               /* 重要：左侧和右侧独立滚动 */
             background: white;
         }
 
@@ -248,7 +256,7 @@
             background: #e5dcd0;
         }
 
-        /* 菜谱库页 - 内部滚动 */
+        /* 菜谱库页 - 内部滚动 (在main-content里) */
         .recipe-page {
             padding: 16px;
             height: 100%;
@@ -371,27 +379,19 @@
             margin-bottom: 12px;
         }
 
-        /* 底部导航 - 永远固定 */
-       .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    max-width: 500px;
-    margin: 0 auto;
-
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-
-    border-top: 1px solid #f0e7db;
-    background: white;
-
-    z-index: 1000;
-}
+        /* 底部导航 - 永远固定在app底部，不随内容滚动 */
+        .bottom-nav {
+            flex-shrink: 0;                    /* 防止被压缩 */
+            width: 100%;
+            max-width: 500px;                  /* 和app一致 */
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid #f0e7db;
+            background: white;
+            /* 无需fixed，利用flex列自然贴在底部 */
+        }
 
         .nav-item {
             display: flex;
@@ -411,7 +411,7 @@
             font-weight: 500;
         }
 
-        /* 弹窗 */
+        /* 弹窗 (保持不变) */
         .modal {
             display: none;
             position: fixed;
@@ -422,7 +422,7 @@
             background: rgba(0,0,0,0.5);
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
         }
 
         .modal.active {
@@ -503,16 +503,16 @@
 </head>
 <body>
     <div class="app">
-        <!-- 头部 -->
+        <!-- 头部 - 固定在顶部 -->
         <div class="header">
             <h1>🍳 料理日记</h1>
             <button id="newRecipeBtn" style="display: none;">+ 新建菜谱</button>
         </div>
 
-        <!-- 主内容区域（可滚动） -->
+        <!-- 主内容区域：flex:1 自动占满剩余高度，并支持内部滚动 -->
         <div class="main-content" id="mainContent"></div>
 
-        <!-- 底部导航（固定） -->
+        <!-- 底部导航 - 始终显示在底部，不会滚走 -->
         <div class="bottom-nav">
             <div class="nav-item active" data-page="plan">📅 计划</div>
             <div class="nav-item" data-page="recipe">📖 菜谱</div>
