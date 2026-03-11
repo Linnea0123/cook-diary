@@ -1,0 +1,472 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+    background: #f5f2ec;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+}
+
+.app {
+    width: 1300px;
+    max-width: 100%;
+    background: white;
+    border-radius: 32px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border: 1px solid #eee7dd;
+}
+
+/* 头部 */
+.header {
+    padding: 20px 28px;
+    border-bottom: 1px solid #f0e9df;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fefcf9;
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 500;
+    color: #3a342b;
+    letter-spacing: -0.3px;
+}
+
+.header button {
+    background: #eae3d8;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 15px;
+    color: #3a342b;
+    cursor: pointer;
+    font-weight: 450;
+    transition: all 0.1s;
+    border: 1px solid #ddd0c0;
+}
+
+.header button:hover {
+    background: #dfd6c8;
+}
+
+/* 主布局：左侧日期栏 + 右侧内容 */
+.main-layout {
+    display: flex;
+    min-height: 500px;
+}
+
+/* 左侧日期栏（窄窄的） */
+.date-sidebar {
+    width: 120px;
+    background: #faf8f5;
+    border-right: 1px solid #ece4d9;
+    padding: 20px 0;
+}
+
+.date-item {
+    padding: 14px 10px;
+    text-align: center;
+    font-size: 15px;
+    color: #5e5548;
+    border-bottom: 1px solid #ece4d9;
+    cursor: pointer;
+    transition: background 0.1s;
+    line-height: 1.5;
+}
+
+.date-item:last-child {
+    border-bottom: none;
+}
+
+.date-item:hover {
+    background: #f0eae1;
+}
+
+.date-item.active {
+    background: #e6ded2;
+    color: #2c241b;
+    font-weight: 500;
+    border-left: 4px solid #b8a68b;
+}
+
+.date-tag {
+    display: inline-block;
+    background: #d1c5b6;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 30px;
+    margin-top: 5px;
+    color: #3d3228;
+}
+
+/* 右侧内容区 */
+.right-content {
+    flex: 1;
+    padding: 24px 28px;
+    background: white;
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.selected-date-title {
+    font-size: 26px;
+    font-weight: 450;
+    color: #2c241b;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0e7db;
+}
+
+/* 三餐区块 */
+.meal-section {
+    margin-bottom: 24px;
+    border: 1px solid #f0e7db;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.meal-header {
+    background: #faf6f1;
+    padding: 14px 20px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #3f382f;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #f0e7db;
+}
+
+.meal-header .arrow {
+    transition: transform 0.15s;
+    color: #ab9a86;
+}
+
+.meal-header.collapsed .arrow {
+    transform: rotate(-90deg);
+}
+
+.meal-content {
+    padding: 20px;
+    background: white;
+}
+
+.meal-content.collapsed {
+    display: none;
+}
+
+/* 分类行 */
+.category-row {
+    margin-bottom: 24px;
+}
+
+.category-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #716957;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px dashed #e5dcd0;
+    padding-bottom: 6px;
+}
+
+.card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* 菜谱卡片（方块） */
+.recipe-card {
+    width: 85px;
+    background: #fdfbf9;
+    border: 1px solid #e5dcd0;
+    border-radius: 14px;
+    overflow: hidden;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.1s;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.recipe-card:hover {
+    border-color: #b8a68b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+}
+
+/* 图片区域（无图片时空白） */
+.card-image {
+    height: 70px;
+    background: #f2ede7;
+    border-bottom: 1px solid #e5dcd0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: #cbb9a6;
+}
+
+/* 有图片时的样式 */
+.card-image.has-image {
+    background-size: cover;
+    background-position: center;
+    color: transparent;
+}
+
+.recipe-name {
+    padding: 10px 4px;
+    font-size: 13px;
+    font-weight: 450;
+    color: #3f382f;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+/* 小红点 */
+.red-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #e06b6b;
+    color: white;
+    font-size: 11px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 加号卡片 */
+.add-card {
+    width: 85px;
+    height: 110px;
+    border: 2px dashed #d9cfc0;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #b8a68b;
+    cursor: pointer;
+    background: #faf8f5;
+}
+
+.add-card:hover {
+    border-color: #b8a68b;
+    color: #8f7b64;
+    background: #f5f0e9;
+}
+
+/* 菜谱库区域 */
+.recipe-library {
+    border-top: 8px solid #f5efe7;
+    padding: 28px 28px 32px;
+    background: #fefcf9;
+}
+
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.library-header h2 {
+    font-size: 20px;
+    font-weight: 500;
+    color: #3a342b;
+}
+
+.search-box {
+    background: white;
+    border: 1px solid #e5dcd0;
+    border-radius: 40px;
+    padding: 8px 18px;
+    width: 240px;
+    font-size: 15px;
+    color: #3f382f;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: #b8a68b;
+}
+
+.category-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-tag {
+    padding: 6px 18px;
+    background: #f2ede7;
+    border-radius: 40px;
+    font-size: 14px;
+    color: #5e5548;
+    cursor: pointer;
+    border: 1px solid #e5dcd0;
+    transition: all 0.1s;
+}
+
+.filter-tag.active {
+    background: #d1c5b6;
+    color: #2c241b;
+    border-color: #b8a68b;
+}
+
+.library-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    min-height: 150px;
+}
+
+/* 弹窗 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 28px;
+    width: 420px;
+    max-width: 90%;
+    padding: 28px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-recipe-name {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 16px 0 8px;
+    color: #2c241b;
+}
+
+.modal-stats {
+    background: #f9f5f0;
+    padding: 16px;
+    border-radius: 16px;
+    margin: 16px 0;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.history-list {
+    margin: 16px 0;
+    max-height: 180px;
+    overflow-y: auto;
+    background: #f9f5f0;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+}
+
+.history-item {
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5dcd0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 40px;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: #d1c5b6;
+    color: #2c241b;
+}
+
+.btn-secondary {
+    background: #f2ede7;
+    color: #5e5548;
+}
+
+.btn-primary:hover {
+    background: #c2b4a2;
+}
+
+.btn-secondary:hover {
+    background: #e5dcd0;
+}
+
+/* 底部导航 */
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 28px;
+    border-top: 1px solid #f0e7db;
+    background: #fefcf9;
+    font-size: 16px;
+    color: #716957;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 40px;
+    transition: background 0.1s;
+}
+
+.nav-item.active {
+    background: #f2ede7;
+    color: #2c241b;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: #f2ede7;
+}
