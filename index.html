@@ -1287,8 +1287,11 @@ document.getElementById('previewEditBtn').onclick = () => {
 };
 
 // 预览弹窗 - 从当前计划中删除菜谱（移到这里）
+
+
+// 预览弹窗 - 从当前计划中删除菜谱
 document.getElementById('previewRemoveFromPlanBtn').onclick = () => {
-      if (currentPreviewSource !== 'plan') return;
+    if (currentPreviewSource !== 'plan') return;
     if (!currentPreview) {
         alert('请先选择一个菜谱');
         return;
@@ -1296,6 +1299,7 @@ document.getElementById('previewRemoveFromPlanBtn').onclick = () => {
     
     const recipeName = currentPreview.name;
     const plan = currentPlan()[selectedDate];
+    const recipeId = currentPreview.id;
     
     if (!plan) {
         alert('计划数据不存在');
@@ -1308,7 +1312,6 @@ document.getElementById('previewRemoveFromPlanBtn').onclick = () => {
     // 遍历当天所有餐次
     for (let meal in plan) {
         if (plan[meal] && typeof plan[meal] === 'object') {
-            // 遍历每个餐次下的所有分类
             for (let cat in plan[meal]) {
                 const list = plan[meal][cat];
                 if (Array.isArray(list)) {
@@ -1317,6 +1320,16 @@ document.getElementById('previewRemoveFromPlanBtn').onclick = () => {
                         list.splice(index, 1);
                         removed = true;
                         removedFrom.push(`${meal}·${cat}`);
+                        
+                        // 删除对应的历史记录（只删除当天的）
+                        const historyKey = `${selectedDate}${meal}`;
+                        const historyList = userData[currentUser].history[recipeId];
+                        if (historyList) {
+                            const historyIndex = historyList.indexOf(historyKey);
+                            if (historyIndex !== -1) {
+                                historyList.splice(historyIndex, 1);
+                            }
+                        }
                     }
                 }
             }
@@ -1328,6 +1341,13 @@ document.getElementById('previewRemoveFromPlanBtn').onclick = () => {
         const activePage = document.querySelector('.nav-item.active')?.dataset.page;
         if (activePage === 'plan') {
             refreshPlan();
+        }
+        // 如果当前在菜谱库页面，刷新计数显示
+        if (activePage === 'recipe') {
+            const activeCat = document.querySelector('.filter-tag.active');
+            const category = activeCat ? activeCat.dataset.category : 'all';
+            const searchValue = document.getElementById('recipeSearch') ? document.getElementById('recipeSearch').value : '';
+            renderLibrary(category, searchValue);
         }
         alert(`已从 ${selectedDate} 的计划中删除「${recipeName}」`);
     } else {
