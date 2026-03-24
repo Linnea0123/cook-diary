@@ -309,7 +309,7 @@
 
 .meal-header {
     background: var(--primary-bg);
-    padding: 4px 10px;  /* 从6px 10px改为4px 10px，减少上下内边距 */
+    padding: 6px 10px;  /* 从6px 10px改为4px 10px，减少上下内边距 */
     font-size: 13px;  /* 保持原字体大小 */
     font-weight: 600;
     color: var(--primary);
@@ -322,7 +322,7 @@
 
         .meal-header .arrow { transition: transform 0.2s; font-size: 11px; }
         .meal-header.collapsed .arrow { transform: rotate(-90deg); }
-        .meal-content {  padding: 8px 8px 0px 12px;   /* 原值 12px 14px → 改小 */ }
+        .meal-content {  padding: 12px 8px 0px 12px;   /* 原值 12px 14px → 改小 */ }
         .meal-content.collapsed { display: none; }
 
        /* 分类行 - 缩小间距 */
@@ -579,7 +579,7 @@
 <script>
     const STORAGE_KEY = 'cook_diary_final_v7';
     let currentUser = localStorage.getItem('current_user') || 'mom';
-    
+    let dateNavInitialized = false; 
     const defaultRecipes = [
         { id: 1, name: '鳕鱼饼', category: '肉鱼', image: '' }, { id: 2, name: '蒸蛋', category: '蛋', image: '' },
         { id: 3, name: '炒鸡蛋', category: '蛋', image: '' }, { id: 4, name: '西蓝花', category: '蔬菜', image: '' },
@@ -790,12 +790,16 @@ let currentPreviewSource = null; // 添加这一行
         </div>
     `;
 }
-    function refreshPlan() {
-    const pc = document.getElementById('planContent');
-    if (pc) { pc.innerHTML = renderPlanContent(); attachPlanEvents(); }
-    attachDateNav();
     
-    // 【关键修改】刷新后重新高亮当前选中的日期
+function refreshPlan() {
+    const pc = document.getElementById('planContent');
+    if (pc) { 
+        pc.innerHTML = renderPlanContent(); 
+        attachPlanEvents();  // 只绑定计划内容的事件
+    }
+    // 移除 attachDateNav() 调用，避免重复绑定日期事件
+    
+    // 刷新后重新高亮当前选中的日期
     const activeDateItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
     if (activeDateItem) {
         document.querySelectorAll('.date-item').forEach(item => {
@@ -804,9 +808,14 @@ let currentPreviewSource = null; // 添加这一行
         activeDateItem.classList.add('active');
     }
     
-    document.getElementById('addMealBtn')?.addEventListener('click', showAddMealModal);
+    // 添加餐次按钮事件（只绑定一次）
+    const addMealBtn = document.getElementById('addMealBtn');
+    if (addMealBtn && !addMealBtn._hasListener) {
+        addMealBtn.addEventListener('click', showAddMealModal);
+        addMealBtn._hasListener = true;
+    }
 }
-    
+
     function showAddMealModal() {
         document.getElementById('newMealName').value = '';
         document.getElementById('addMealModal').classList.add('active');
@@ -842,7 +851,8 @@ let currentPreviewSource = null; // 添加这一行
         });
     }
     
-    function shiftWeek(days) {
+    
+function shiftWeek(days) {
     weekDates.forEach(d => { 
         d.fullDate.setDate(d.fullDate.getDate() + days); 
         const m = d.fullDate.getMonth()+1, day = d.fullDate.getDate(); 
@@ -870,22 +880,17 @@ let currentPreviewSource = null; // 添加这一行
     const mainContent = document.getElementById('mainContent');
     if (document.querySelector('.nav-item.active').dataset.page === 'plan') { 
         mainContent.innerHTML = renderPlanPage(); 
+        // 重置初始化标志，因为 DOM 重新创建了
+        dateNavInitialized = false;
         refreshPlan(); 
-        
-        // 【关键修改】切换周后，确保高亮正确
-        setTimeout(() => {
-            const newActiveItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
-            if (newActiveItem) {
-                document.querySelectorAll('.date-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                newActiveItem.classList.add('active');
-            }
-        }, 50);
+        attachDateNav(); 
     }
 }
-    
     function attachDateNav() {
+    // 如果已经初始化过，直接返回，避免重复绑定
+    if (dateNavInitialized) return;
+    dateNavInitialized = true;
+    
     // 绑定日期点击事件
     document.querySelectorAll('.date-item').forEach(el => {
         el.addEventListener('click', () => { 
@@ -901,32 +906,29 @@ let currentPreviewSource = null; // 添加这一行
         });
     });
     
-    // 绑定周箭头事件（移到 forEach 外面）
+    // 绑定周箭头事件
     const weekNav = document.querySelector('.week-nav-container');
-    if (weekNav) {
-        weekNav.removeEventListener('click', window._arrowHandler);
-        window._arrowHandler = (e) => {
+    if (weekNav && !weekNav._hasListener) {
+        weekNav.addEventListener('click', (e) => {
             const target = e.target.closest('.week-arrow');
             if (!target) return;
             if (target.classList.contains('prev')) shiftWeek(-7);
             else if (target.classList.contains('next')) shiftWeek(7);
-        };
-        weekNav.addEventListener('click', window._arrowHandler);
+        });
+        weekNav._hasListener = true;
     }
     
-    // 绑定设置按钮事件（移到 forEach 外面）
+    // 绑定设置按钮事件
     const sidebarBtn = document.getElementById('sidebarSettingsBtn');
-    if (sidebarBtn) {
-        sidebarBtn.removeEventListener('click', window._settingsHandler);
-        window._settingsHandler = () => {
+    if (sidebarBtn && !sidebarBtn._hasListener) {
+        sidebarBtn.addEventListener('click', () => {
             document.getElementById('githubToken').value = localStorage.getItem('github_token') || '';
             document.getElementById('gistId').value = localStorage.getItem('gist_id') || '';
             document.getElementById('settingsModal').classList.add('active');
-        };
-        sidebarBtn.addEventListener('click', window._settingsHandler);
+        });
+        sidebarBtn._hasListener = true;
     }
 }
-    
 
 
    function addToPlan(recipeName) {
@@ -1305,19 +1307,28 @@ function renderCategoryList() {
     function initSearch() { let t; document.getElementById('searchInput').addEventListener('input', e=>{ clearTimeout(t); t=setTimeout(()=>performSearch(e.target.value),200); }); performSearch(''); }
     
     function showPage(page) {
-
-
-    // 保存当前页面到 localStorage
     localStorage.setItem('last_page', page);
-
-
-        const main = document.getElementById('mainContent');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === page));
-        if (page === 'plan') { main.innerHTML = renderPlanPage(); refreshPlan(); }
-        else if (page === 'recipe') { main.innerHTML = renderRecipePage(); initRecipe(); }
-        else if (page === 'search') { main.innerHTML = renderSearchPage(); initSearch(); }
-    }
     
+    const main = document.getElementById('mainContent');
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === page));
+    
+    if (page === 'plan') { 
+        main.innerHTML = renderPlanPage(); 
+        // 重置初始化标志，因为 DOM 重新创建了
+        dateNavInitialized = false;
+        refreshPlan(); 
+        attachDateNav();  // 只在首次渲染时调用一次
+    }
+    else if (page === 'recipe') { 
+        main.innerHTML = renderRecipePage(); 
+        initRecipe(); 
+    }
+    else if (page === 'search') { 
+        main.innerHTML = renderSearchPage(); 
+        initSearch(); 
+    }
+}
+
     // Gist同步
     function saveSettings() { localStorage.setItem('github_token', document.getElementById('githubToken').value); localStorage.setItem('gist_id', document.getElementById('gistId').value); document.getElementById('syncStatus').innerText = '✅ 设置已保存'; setTimeout(()=>{ if(document.getElementById('syncStatus')) document.getElementById('syncStatus').innerText = '就绪'; },2000); }
     async function syncToGist() { const token = localStorage.getItem('github_token'); const gistId = localStorage.getItem('gist_id'); if(!token || !gistId){ document.getElementById('syncStatus').innerText = '❌ 请先保存Token和Gist ID'; return; } try { const data = { recipes, userData }; const res = await fetch(`https://api.github.com/gists/${gistId}`, { method: 'PATCH', headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ files: { 'cook_diary.json': { content: JSON.stringify(data) } } }) }); if(res.ok) document.getElementById('syncStatus').innerText = '✅ 同步成功！'; else document.getElementById('syncStatus').innerText = '❌ 同步失败'; } catch(e) { document.getElementById('syncStatus').innerText = '❌ 网络错误'; } }
