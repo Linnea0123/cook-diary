@@ -791,11 +791,21 @@ let currentPreviewSource = null; // 添加这一行
     `;
 }
     function refreshPlan() {
-        const pc = document.getElementById('planContent');
-        if (pc) { pc.innerHTML = renderPlanContent(); attachPlanEvents(); }
-        attachDateNav();
-        document.getElementById('addMealBtn')?.addEventListener('click', showAddMealModal);
+    const pc = document.getElementById('planContent');
+    if (pc) { pc.innerHTML = renderPlanContent(); attachPlanEvents(); }
+    attachDateNav();
+    
+    // 【关键修改】刷新后重新高亮当前选中的日期
+    const activeDateItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
+    if (activeDateItem) {
+        document.querySelectorAll('.date-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        activeDateItem.classList.add('active');
     }
+    
+    document.getElementById('addMealBtn')?.addEventListener('click', showAddMealModal);
+}
     
     function showAddMealModal() {
         document.getElementById('newMealName').value = '';
@@ -833,43 +843,92 @@ let currentPreviewSource = null; // 添加这一行
     }
     
     function shiftWeek(days) {
-        weekDates.forEach(d => { d.fullDate.setDate(d.fullDate.getDate() + days); const m = d.fullDate.getMonth()+1, day = d.fullDate.getDate(); d.dateStr = `${m.toString().padStart(2,'0')}/${day.toString().padStart(2,'0')}`; d.isToday = d.fullDate.toDateString() === new Date().toDateString(); });
-        selectedDate = weekDates.find(d => d.isToday)?.dateStr || weekDates[0].dateStr;
-        ['mom','baby'].forEach(u => { let np = {}; weekDates.forEach(w => { np[w.dateStr] = userData[u].planData[w.dateStr] || {}; if(Object.keys(np[w.dateStr]).length === 0) { np[w.dateStr] = {}; defaultMeals.forEach(m => { np[w.dateStr][m] = { '主食':[], '蔬菜':[], '肉鱼':[], '蛋':[], '油脂':[], '水果':[] }; }); } }); userData[u].planData = np; });
-        saveData();
-        const mainContent = document.getElementById('mainContent');
-        if (document.querySelector('.nav-item.active').dataset.page === 'plan') { mainContent.innerHTML = renderPlanPage(); refreshPlan(); }
+    weekDates.forEach(d => { 
+        d.fullDate.setDate(d.fullDate.getDate() + days); 
+        const m = d.fullDate.getMonth()+1, day = d.fullDate.getDate(); 
+        d.dateStr = `${m.toString().padStart(2,'0')}/${day.toString().padStart(2,'0')}`; 
+        d.isToday = d.fullDate.toDateString() === new Date().toDateString(); 
+    });
+    selectedDate = weekDates.find(d => d.isToday)?.dateStr || weekDates[0].dateStr;
+    
+    // 更新计划数据结构...
+    ['mom','baby'].forEach(u => { 
+        let np = {}; 
+        weekDates.forEach(w => { 
+            np[w.dateStr] = userData[u].planData[w.dateStr] || {}; 
+            if(Object.keys(np[w.dateStr]).length === 0) { 
+                np[w.dateStr] = {}; 
+                defaultMeals.forEach(m => { 
+                    np[w.dateStr][m] = { '主食':[], '蔬菜':[], '肉鱼':[], '蛋':[], '油脂':[], '水果':[] }; 
+                }); 
+            } 
+        }); 
+        userData[u].planData = np; 
+    });
+    saveData();
+    
+    const mainContent = document.getElementById('mainContent');
+    if (document.querySelector('.nav-item.active').dataset.page === 'plan') { 
+        mainContent.innerHTML = renderPlanPage(); 
+        refreshPlan(); 
+        
+        // 【关键修改】切换周后，确保高亮正确
+        setTimeout(() => {
+            const newActiveItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
+            if (newActiveItem) {
+                document.querySelectorAll('.date-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                newActiveItem.classList.add('active');
+            }
+        }, 50);
     }
+}
     
     function attachDateNav() {
-        document.querySelectorAll('.date-item').forEach(el => {
-            el.addEventListener('click', () => { selectedDate = el.dataset.date; refreshPlan(); });
+    // 绑定日期点击事件
+    document.querySelectorAll('.date-item').forEach(el => {
+        el.addEventListener('click', () => { 
+            selectedDate = el.dataset.date; 
+            
+            // 手动更新日期高亮
+            document.querySelectorAll('.date-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            el.classList.add('active');
+            
+            refreshPlan(); 
         });
-        
-        const weekNav = document.querySelector('.week-nav-container');
-        if (weekNav) {
-            weekNav.removeEventListener('click', window._arrowHandler);
-            window._arrowHandler = (e) => {
-                const target = e.target.closest('.week-arrow');
-                if (!target) return;
-                if (target.classList.contains('prev')) shiftWeek(-7);
-                else if (target.classList.contains('next')) shiftWeek(7);
-            };
-            weekNav.addEventListener('click', window._arrowHandler);
-        }
-        
-        const sidebarBtn = document.getElementById('sidebarSettingsBtn');
-        if (sidebarBtn) {
-            sidebarBtn.removeEventListener('click', window._settingsHandler);
-            window._settingsHandler = () => {
-                document.getElementById('githubToken').value = localStorage.getItem('github_token') || '';
-                document.getElementById('gistId').value = localStorage.getItem('gist_id') || '';
-                document.getElementById('settingsModal').classList.add('active');
-            };
-            sidebarBtn.addEventListener('click', window._settingsHandler);
-        }
+    });
+    
+    // 绑定周箭头事件（移到 forEach 外面）
+    const weekNav = document.querySelector('.week-nav-container');
+    if (weekNav) {
+        weekNav.removeEventListener('click', window._arrowHandler);
+        window._arrowHandler = (e) => {
+            const target = e.target.closest('.week-arrow');
+            if (!target) return;
+            if (target.classList.contains('prev')) shiftWeek(-7);
+            else if (target.classList.contains('next')) shiftWeek(7);
+        };
+        weekNav.addEventListener('click', window._arrowHandler);
     }
     
+    // 绑定设置按钮事件（移到 forEach 外面）
+    const sidebarBtn = document.getElementById('sidebarSettingsBtn');
+    if (sidebarBtn) {
+        sidebarBtn.removeEventListener('click', window._settingsHandler);
+        window._settingsHandler = () => {
+            document.getElementById('githubToken').value = localStorage.getItem('github_token') || '';
+            document.getElementById('gistId').value = localStorage.getItem('gist_id') || '';
+            document.getElementById('settingsModal').classList.add('active');
+        };
+        sidebarBtn.addEventListener('click', window._settingsHandler);
+    }
+}
+    
+
+
    function addToPlan(recipeName) {
     if (!selectedMeal || !selectedCategory) return;
     const plan = currentPlan()[selectedDate];
@@ -932,11 +991,22 @@ function applyTheme() {
     
     function switchUser() { 
     currentUser = currentUser === 'mom' ? 'baby' : 'mom'; 
-    localStorage.setItem('current_user', currentUser);  // 添加这一行
+    localStorage.setItem('current_user', currentUser);
     applyTheme(); 
     saveData(); 
     const active = document.querySelector('.nav-item.active').dataset.page; 
-    showPage(active); 
+    showPage(active);
+    
+    // 【关键修改】切换用户后，确保高亮当前选中的日期
+    setTimeout(() => {
+        const activeDateItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
+        if (activeDateItem) {
+            document.querySelectorAll('.date-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            activeDateItem.classList.add('active');
+        }
+    }, 100);
 }
 
 function renderRecipePage() { 
