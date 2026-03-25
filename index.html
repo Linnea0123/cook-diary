@@ -1157,22 +1157,35 @@ np[w.dateStr][m] = mealObj;
         refreshPlan();
     }
 }
-    function showSelectModal(category) {
+
+function showSelectModal(category) {
     const modal = document.getElementById('selectModal');
     document.getElementById('selectTitle').innerText = `➕ 添加${category}`;
     const filtered = currentRecipes().filter(r => r.mainCat === category);
     document.getElementById('selectTextList').innerHTML = filtered.map(r => `<span class="recipe-tag" style="background:var(--primary-light);padding:6px 16px;" data-name="${r.name}">${r.name}</span>`).join('');
     modal.classList.add('active');
+    
+    // 移除旧的监听器，防止重复绑定
+    const oldClickHandler = modal._clickHandler;
+    if (oldClickHandler) {
+        document.querySelectorAll('#selectTextList .recipe-tag').forEach(el => {
+            el.removeEventListener('click', oldClickHandler);
+        });
+    }
+    
+    // 新的点击处理
+    modal._clickHandler = (el) => {
+        addToPlan(el.dataset.name);
+        modal.classList.remove('active');
+    };
+    
     document.querySelectorAll('#selectTextList .recipe-tag').forEach(el => { 
-        el.addEventListener('click', () => { 
-            addToPlan(el.dataset.name); 
-            modal.classList.remove('active'); 
-        }); 
+        el.addEventListener('click', () => modal._clickHandler(el));
     });
+    
+    // 关闭按钮
     document.getElementById('closeSelectBtn').onclick = () => modal.classList.remove('active');
 }
-
-   
 
 function showPreview(recipe, source = 'plan') {
     currentPreview = recipe;
