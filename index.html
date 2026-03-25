@@ -546,7 +546,11 @@
         <div class="modal-title">⚙️ 同步设置</div>
         <div class="setting-group"><label class="setting-label">GitHub Token</label><input type="password" class="setting-input" id="githubToken" placeholder="ghp_xxxxxxxxxxxx"></div>
         <div class="setting-group"><label class="setting-label">Gist ID</label><input type="text" class="setting-input" id="gistId" placeholder="输入 Gist ID"></div>
-        <div class="sync-buttons"><button class="sync-btn" id="saveSettingsBtn">💾 保存设置</button><button class="sync-btn" id="syncToGistBtn">☁️ 立即同步</button><button class="sync-btn danger" id="restoreFromGistBtn">📥 恢复云端</button></div>
+        <div class="sync-buttons" style="flex-wrap: wrap; gap: 8px;">
+    <button class="sync-btn" id="saveSettingsBtn" style="flex: 1; min-width: 100px;">💾 保存设置</button>
+    <button class="sync-btn" id="syncToGistBtn" style="flex: 1; min-width: 100px;">☁️ 立即同步</button>
+    <button class="sync-btn" id="restoreFromGistBtn" style="flex: 1; min-width: 100px;">📥 恢复云端</button>
+</div>
         <div class="sync-status" id="syncStatus">未同步</div>
         <div class="modal-buttons"><button class="modal-btn modal-btn-secondary" id="closeSettingsBtn">关闭</button></div>
     </div>
