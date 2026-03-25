@@ -903,6 +903,8 @@ function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipes
 let currentPreviewSource = null; // 添加这一行
     let currentMainFilter = 'all';
 let currentSubFilter = '';
+let currentSelectedMainCat = 'all';
+let currentSelectedSubCat = '';
     function getMealsForDate(dateStr) {
         const order = currentMealOrder()[dateStr];
         if (order && order.length) return order;
@@ -1297,7 +1299,7 @@ function renderLibrary(cat = 'all', kw = '') {
     ); 
     document.getElementById('libraryGrid').innerHTML = filtered.map(r => {
         const count = currentHistory(r.id).length;
-       return `<span class="recipe-text-card" data-id="${r.id}">${r.name}${r.subCat ? `<span class="sub-badge">${r.subCat}</span>` : ''}${count ? `<span class="small-count">${count}</span>` : ''}</span>`;
+       return `<span class="recipe-text-card" data-id="${r.id}">${r.name}${count ? `<span class="small-count">${count}</span>` : ''}</span>`;
     }).join(''); 
     document.querySelectorAll('#libraryGrid .recipe-text-card').forEach(c => { 
         c.addEventListener('click', () => { 
@@ -1316,13 +1318,18 @@ function updateSubcategoryBar() {
             subCategories[currentMainFilter].map(sub => `<span class="sub-filter-tag ${currentSubFilter === sub ? 'active' : ''}" data-sub="${sub}">${sub}</span>`).join('');
         bar.querySelectorAll('.sub-filter-tag').forEach(el => {
             el.addEventListener('click', () => {
-                currentSubFilter = el.dataset.sub;
-                const activeCat = document.querySelector('.filter-tag.active');
-                const category = activeCat ? activeCat.dataset.category : 'all';
-                const searchValue = document.getElementById('recipeSearch')?.value || '';
-                renderLibrary(category, searchValue);
-                updateSubcategoryBar();
-            });
+    currentSubFilter = el.dataset.sub;
+    // 记录当前选中的主分类和子分类，用于添加菜谱时默认选中
+    const activeCat = document.querySelector('.filter-tag.active');
+    if (activeCat) {
+        currentSelectedMainCat = activeCat.dataset.category;
+        currentSelectedSubCat = el.dataset.sub;
+    }
+    const category = activeCat ? activeCat.dataset.category : 'all';
+    const searchValue = document.getElementById('recipeSearch')?.value || '';
+    renderLibrary(category, searchValue);
+    updateSubcategoryBar();
+});
         });
     } else {
         bar.style.display = 'none';
@@ -1332,13 +1339,17 @@ function updateSubcategoryBar() {
 
 function initRecipe() { 
     renderLibrary(); 
+    
     // 初始化当前选中的主分类
-const activeFilter = document.querySelector('.filter-tag.active');
-if (activeFilter) {
-    currentMainFilter = activeFilter.dataset.category;
-} else {
-    currentMainFilter = 'all';
-}
+    const activeFilter = document.querySelector('.filter-tag.active');
+    if (activeFilter) {
+        currentMainFilter = activeFilter.dataset.category;
+        currentSelectedMainCat = activeFilter.dataset.category;
+    } else {
+        currentMainFilter = 'all';
+        currentSelectedMainCat = 'all';
+    }
+    
     // 添加菜谱按钮事件
     const addRecipeBtn = document.getElementById('addRecipeBtn');
     if (addRecipeBtn) {
@@ -1346,10 +1357,25 @@ if (activeFilter) {
         addRecipeBtn._handler = () => {
             document.getElementById('editId').value = '';
             document.getElementById('editName').value = '';
-            document.getElementById('editMainCategory').value = '主食';
-document.getElementById('editSubCategory').value = '';
-document.getElementById('editQuantity').value = '';
-updateSubCategorySelect('主食');
+            
+            // 根据当前选中的主分类设置默认值
+            let defaultMainCat = '主食';
+            let defaultSubCat = '';
+            
+            if (currentSelectedMainCat !== 'all' && currentSelectedMainCat) {
+                defaultMainCat = currentSelectedMainCat;
+                defaultSubCat = currentSelectedSubCat || '';
+            }
+            
+            document.getElementById('editMainCategory').value = defaultMainCat;
+            document.getElementById('editSubCategory').value = defaultSubCat;
+            document.getElementById('editQuantity').value = '';
+            updateSubCategorySelect(defaultMainCat);
+            // 确保子分类下拉框选中正确的值
+            setTimeout(() => {
+                document.getElementById('editSubCategory').value = defaultSubCat;
+            }, 50);
+            
             const previewDiv = document.getElementById('editImagePreview');
             previewDiv.innerHTML = '<span style="color: #999;">📷 暂无图片</span>';
             if (document.getElementById('editImageUrl')) {
@@ -1361,35 +1387,38 @@ updateSubCategorySelect('主食');
         addRecipeBtn.addEventListener('click', addRecipeBtn._handler);
     }
     
-// 分类筛选
-document.querySelectorAll('.filter-tag').forEach(t => {
-    t.removeEventListener('click', t._filterHandler);
-    t._filterHandler = () => {
-        document.querySelectorAll('.filter-tag').forEach(f=>f.classList.remove('active'));
-        t.classList.add('active');
-        currentMainFilter = t.dataset.category;
-        currentSubFilter = '';
-        const searchValue = document.getElementById('recipeSearch') ? document.getElementById('recipeSearch').value : '';
-        renderLibrary(currentMainFilter, searchValue);
-        updateSubcategoryBar();
-    };
-    t.addEventListener('click', t._filterHandler);
-});
-
-// 初始化子分类栏
-updateSubcategoryBar();
+    // 分类筛选
+    document.querySelectorAll('.filter-tag').forEach(t => {
+        t.removeEventListener('click', t._filterHandler);
+        t._filterHandler = () => {
+            document.querySelectorAll('.filter-tag').forEach(f=>f.classList.remove('active'));
+            t.classList.add('active');
+            currentMainFilter = t.dataset.category;
+            currentSubFilter = '';
+            // 记录当前选中的主分类
+            currentSelectedMainCat = t.dataset.category;
+            currentSelectedSubCat = '';
+            const searchValue = document.getElementById('recipeSearch') ? document.getElementById('recipeSearch').value : '';
+            renderLibrary(currentMainFilter, searchValue);
+            updateSubcategoryBar();
+        };
+        t.addEventListener('click', t._filterHandler);
+    });
+    
+    // 初始化子分类栏
+    updateSubcategoryBar();
+    
     // 搜索
-    // 搜索
-const searchInput = document.getElementById('recipeSearch');
-if (searchInput) {
-    searchInput.removeEventListener('input', searchInput._inputHandler);
-    searchInput._inputHandler = (e) => {
-        const searchValue = e.target.value;
-        // 使用当前的筛选条件进行搜索
-        renderLibrary(currentMainFilter, searchValue);
-    };
-    searchInput.addEventListener('input', searchInput._inputHandler);
-}
+    const searchInput = document.getElementById('recipeSearch');
+    if (searchInput) {
+        searchInput.removeEventListener('input', searchInput._inputHandler);
+        searchInput._inputHandler = (e) => {
+            const searchValue = e.target.value;
+            // 使用当前的筛选条件进行搜索
+            renderLibrary(currentMainFilter, searchValue);
+        };
+        searchInput.addEventListener('input', searchInput._inputHandler);
+    }
     
     // 初始化类别编辑器
     initCategoryEditor();
