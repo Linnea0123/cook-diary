@@ -861,12 +861,16 @@
 <body>
 <div class="app mom-theme" id="app">
     <div class="header">
-        <div class="header-left">
-            <h1>🍳 料理日记</h1>
-           
-        </div>
-        <button class="switch-user-btn" id="switchUserBtn">👩 妈妈</button>
+    <div class="header-left">
+        <h1>三餐计划</h1>
     </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="switch-user-btn" id="switchUserBtn">👩 妈妈</button>
+        <button class="switch-user-btn" id="headerSettingsBtn" style="background: transparent; border: none; padding: 0px 0px; border-radius: 30px; font-size: 13px; font-weight: 500; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 0px;">
+    ⚙️
+</button>
+    </div>
+</div>
 
     <div class="top-nav">
     <div class="nav-item active" data-page="plan"><span>📅</span></div>
@@ -898,7 +902,7 @@
 <!-- 添加餐次弹窗 -->
 <div class="modal" id="addMealModal">
     <div class="modal-content">
-        <div class="modal-title">➕ 添加餐次</div>
+        <div class="modal-title">+ 添加餐次</div>
         <div class="setting-group"><label class="setting-label">餐次名称</label><input type="text" class="setting-input" id="newMealName" placeholder="例如：早茶、加餐、夜宵"></div>
         <div class="modal-buttons"><button class="modal-btn modal-btn-primary" id="confirmAddMealBtn">添加</button><button class="modal-btn modal-btn-secondary" id="cancelAddMealBtn">取消</button></div>
     </div>
@@ -965,8 +969,7 @@
 </div>
 
 <!-- 选择菜谱弹窗 -->
-<div class="modal" id="selectModal"><div class="modal-content"><h3 id="selectTitle" style="margin-bottom:16px;">选择菜谱</h3><div id="selectTextList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div><button class="modal-btn modal-btn-secondary" id="closeSelectBtn">取消</button></div></div>
-
+<div class="modal" id="selectModal"><div class="modal-content"><div id="selectTextList" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div><button class="modal-btn modal-btn-secondary" id="closeSelectBtn">取消</button></div></div>
 
 
 <!-- 类别编辑弹窗（整合主分类+子分类，紧凑版）-->
@@ -985,7 +988,7 @@
             </div>
             <div style="display: flex; gap: 8px;">
                 <input type="text" id="newCategoryName" placeholder="新主分类名称" style="flex: 1; padding: 6px 10px; border-radius: 20px; border: 1px solid #ddd; font-size: 13px;">
-                <button class="modal-btn" id="addCategoryBtn" style="flex: 0 0 auto; padding: 6px 14px; font-size: 12px; border-radius: 20px;">➕ 添加</button>
+                <button class="modal-btn" id="addCategoryBtn" style="flex: 0 0 auto; padding: 6px 14px; font-size: 12px; border-radius: 20px;">+ 添加</button>
             </div>
         </div>
         
@@ -1440,36 +1443,38 @@ const mealData = plan[meal] || defaultMealObj;
                 }).join('') : '<span style="font-size:12px;color:#aaa;"></span>';
                 // 获取分类颜色（支持动态新分类）
 const catColor = getCategoryStyle(cat);
-inner += `<div class="category-row"><span class="category-title" data-cat="${cat}" style="background: ${catColor.bg}; color: ${catColor.text};">${cat}</span><div class="recipe-tags">${tagsHtml}</div><button class="add-btn-slim" data-meal="${meal}" data-category="${cat}">+</button></div>`;
-            });
+inner += `<div class="category-row">
+    <span class="category-title" data-cat="${cat}" style="background: ${catColor.bg}; color: ${catColor.text};">${cat}</span>
+    <div class="recipe-tags">${tagsHtml}</div>
+    <button class="add-btn-slim" data-meal="${meal}" data-category="${cat}" title="选择已有菜谱">+</button>
+</div>`;
+
+});
             html += `<div class="meal-section"><div class="meal-header"><span class="arrow">▼</span> ${meal}<button class="delete-meal" data-meal="${meal}">✕</button></div><div class="meal-content">${inner}</div></div>`;
         }
         return html;
     }
     
-   function renderPlanPage() {
+  function renderPlanPage() {
+    // 先渲染星期列表（不带箭头）
     const dateItems = weekDates.map((d, index) => `
         <div class="date-item ${d.dateStr === selectedDate ? 'active' : ''}" data-date="${d.dateStr}">
             <div class="date-week">${d.week}</div>
             <div class="date-day">${d.dateStr}</div>
             ${d.isToday ? '<div class="date-tag">今</div>' : ''}
         </div>
-        ${index === weekDates.length - 1 ? `
-        <div class="week-nav-container">
-            <span class="week-arrow prev">◀</span>
-            <span class="week-arrow next">▶</span>
-        </div>
-        ` : ''}
     `).join('');
     
     return `
         <div class="main-layout">
             <div class="date-sidebar">
+                <!-- 左右箭头移到顶部，放在星期一上面 -->
+                <div class="week-nav-container" style="padding: 8px 0 4px 0; display: flex; justify-content: center; gap: 4px;">
+    <span class="week-arrow prev" style="font-size: 15px; cursor: pointer; padding: 4px 8px; color: var(--primary);">◀</span>
+    <span class="week-arrow next" style="font-size: 15px; cursor: pointer; padding: 4px 8px; color: var(--primary);">▶</span>
+</div>
                 <div class="date-items">
                     ${dateItems}
-                </div>
-                <div class="sidebar-settings">
-                    <button class="sidebar-settings-btn" id="sidebarSettingsBtn">⚙️</button>
                 </div>
             </div>
             <div class="plan-content" id="planContent">
@@ -1478,7 +1483,6 @@ inner += `<div class="category-row"><span class="category-title" data-cat="${cat
         </div>
     `;
 }
-    
 function refreshPlan() {
     const pc = document.getElementById('planContent');
     if (pc) { 
@@ -1541,11 +1545,22 @@ function attachPlanEvents() {
         };
         tag.addEventListener('click', tag._clickHandler);
     });
-    document.querySelectorAll('.add-btn-slim').forEach(btn => {
-        btn.removeEventListener('click', btn._clickHandler);
-        btn._clickHandler = (e) => { e.stopPropagation(); selectedMeal = btn.dataset.meal; selectedCategory = btn.dataset.category; showSelectModal(selectedCategory); };
-        btn.addEventListener('click', btn._clickHandler);
-    });
+    // 选择已有菜谱按钮 (📋)
+document.querySelectorAll('.add-btn-slim').forEach(btn => {
+    btn.removeEventListener('click', btn._clickHandler);
+    btn._clickHandler = (e) => { 
+        e.stopPropagation(); 
+        selectedMeal = btn.dataset.meal; 
+        selectedCategory = btn.dataset.category; 
+        showSelectModal(selectedCategory);
+    };
+    btn.addEventListener('click', btn._clickHandler);
+});
+
+
+
+
+
     document.querySelectorAll('.meal-header').forEach(header => {
         header.removeEventListener('click', header._clickHandler);
         header._clickHandler = (e) => { if(e.target.classList.contains('delete-meal')) return; header.classList.toggle('collapsed'); header.nextElementSibling.classList.toggle('collapsed'); };
@@ -1668,11 +1683,24 @@ np[w.dateStr][m] = mealObj;
     }
 }
 
+
 function showSelectModal(category) {
     const modal = document.getElementById('selectModal');
-    document.getElementById('selectTitle').innerText = `➕ 添加${category}`;
     const filtered = currentRecipes().filter(r => r.mainCat === category);
-    document.getElementById('selectTextList').innerHTML = filtered.map(r => `<span class="recipe-tag" style="background:var(--primary-light);padding:6px 16px;" data-name="${r.name}">${r.name}</span>`).join('');
+    
+    // 生成菜谱列表HTML
+    const recipesHtml = filtered.map(r => `<span class="recipe-tag" style="background: #e3f0ff; padding: 6px 16px; border-radius: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #1e5f8e;" data-name="${r.name}">${r.name}</span>`).join('');
+    document.getElementById('selectTextList').innerHTML = `
+    <div style="position: relative; width: 100%; margin-bottom: 16px;">
+        <div style="text-align: left; font-size: 15px; font-weight: 600; color: var(--primary);">添加${category}</div>
+        <button id="addNewRecipeFromSelectBtn" style="position: absolute; top: 0; right: 0; background: var(--primary-light); border: none; padding: 4px 12px; border-radius: 30px; font-size: 12px; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            + 新菜谱
+        </button>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+        ${recipesHtml || '<div style="color:#999; text-align:center; width:100%; padding:20px;">暂无菜谱，点击右上角添加</div>'}
+    </div>
+`;
     modal.classList.add('active');
     
     // 移除旧的监听器，防止重复绑定
@@ -1683,7 +1711,7 @@ function showSelectModal(category) {
         });
     }
     
-    // 新的点击处理
+    // 菜谱点击处理（选择已有菜谱）
     modal._clickHandler = (el) => {
         addToPlan(el.dataset.name);
         modal.classList.remove('active');
@@ -1693,9 +1721,24 @@ function showSelectModal(category) {
         el.addEventListener('click', () => modal._clickHandler(el));
     });
     
+    // 添加新菜谱按钮点击处理
+    const addNewBtn = document.getElementById('addNewRecipeFromSelectBtn');
+    if (addNewBtn) {
+        // 移除旧的监听器
+        const oldNewHandler = addNewBtn._newHandler;
+        if (oldNewHandler) addNewBtn.removeEventListener('click', oldNewHandler);
+        
+        addNewBtn._newHandler = () => {
+            modal.classList.remove('active');  // 先关闭选择菜谱弹窗
+            openAddRecipeModalWithCategory(category);  // 打开添加新菜谱弹窗，自动选中当前分类
+        };
+        addNewBtn.addEventListener('click', addNewBtn._newHandler);
+    }
+    
     // 关闭按钮
     document.getElementById('closeSelectBtn').onclick = () => modal.classList.remove('active');
 }
+
 
 function showPreview(recipe, source = 'plan') {
     currentPreview = recipe;
@@ -3304,8 +3347,59 @@ document.getElementById('deleteBtn').onclick = () => {
 document.getElementById('closeEditBtn').onclick = () => document.getElementById('editModal').classList.remove('active');
 
 
-
-
+// 打开添加菜谱弹窗，并自动选中指定的主分类
+// 打开添加菜谱弹窗，并自动选中指定的主分类
+function openAddRecipeModalWithCategory(category) {
+    // 清空表单
+    document.getElementById('editId').value = '';
+    document.getElementById('editName').value = '';
+    
+    // 更新主分类下拉框选项
+    const mainCatSelect = document.getElementById('editMainCategory');
+    if (mainCatSelect) {
+        mainCatSelect.innerHTML = customCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+    }
+    
+    // 设置当前分类
+    document.getElementById('editMainCategory').value = category;
+    document.getElementById('editQuantity').value = '';
+    
+    // 清空并重新生成子分类下拉框
+    const subSel = document.getElementById('editSubCategory');
+    subSel.innerHTML = '<option value="">无子分类</option>';
+    if (subCategories[category]) {
+        subSel.innerHTML += subCategories[category].map(sub => `<option value="${sub}">${sub}</option>`).join('');
+    }
+    subSel.value = '';
+    
+    // 添加 change 事件监听
+    const mainCatSelectForChange = document.getElementById('editMainCategory');
+    const oldChangeHandler = mainCatSelectForChange._changeHandler;
+    if (oldChangeHandler) mainCatSelectForChange.removeEventListener('change', oldChangeHandler);
+    mainCatSelectForChange._changeHandler = () => {
+        const selectedMain = mainCatSelectForChange.value;
+        const subSelect = document.getElementById('editSubCategory');
+        subSelect.innerHTML = '<option value="">无子分类</option>';
+        if (subCategories[selectedMain]) {
+            subSelect.innerHTML += subCategories[selectedMain].map(sub => `<option value="${sub}">${sub}</option>`).join('');
+        }
+        subSelect.value = '';
+    };
+    mainCatSelectForChange.addEventListener('change', mainCatSelectForChange._changeHandler);
+    
+    // 清空图片预览
+    const previewDiv = document.getElementById('editImagePreview');
+    previewDiv.innerHTML = '<span style="color: #999;">📷 暂无图片</span>';
+    if (document.getElementById('editImageUrl')) {
+        document.getElementById('editImageUrl').value = '';
+    }
+    
+    // 设置弹窗标题
+    document.querySelector('#editModal h3').innerText = '添加新菜谱';
+    
+    // 打开弹窗
+    document.getElementById('editModal').classList.add('active');
+}
 // 初始化图片上传
 initImageUpload();
 
