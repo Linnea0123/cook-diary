@@ -6,6 +6,92 @@
     <title>食物</title>
     <style>
 
+        /* 气泡图标 */
+.bubble-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+/* 圆形按钮容器 */
+.bubble-note-btn {
+    background: var(--primary-light);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+}
+
+.bubble-note-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 有备注时显示小红点 */
+.bubble-note-btn.has-note::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    border: 1px solid white;
+    box-shadow: 0 0 2px rgba(0,0,0,0.2);
+}
+
+/* 圆形气泡备注按钮 */
+.bubble-note-btn {
+    background: var(--primary-light);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+}
+
+.bubble-note-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 有备注时显示小圆点提示 */
+.bubble-note-btn.has-note::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+
 
 /* 月历页面样式 */
 .calendar-page {
@@ -1301,39 +1387,15 @@ function loadData() {
             } else {
                 recipes = data.recipes || { mom: [...defaultRecipes], baby: [...defaultRecipes] };
             }
-            userData = data.userData || { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {} } };
+            userData = data.userData || { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} } };
         } catch(e) {
             recipes = { mom: [...defaultRecipes], baby: [...defaultRecipes] };
-            userData = { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {} } };
+            userData = { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} } };
         }
     } else {
         recipes = { mom: [...defaultRecipes], baby: [...defaultRecipes] };
-        userData = { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {} } };
+        userData = { mom: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} }, baby: { planData: initEmptyPlan(), history: {}, mealOrder: {}, notes: {} } };
     }
-    
-    if (!recipes.mom) recipes.mom = [...defaultRecipes];
-    if (!recipes.baby) recipes.baby = [...defaultRecipes];
-    
-    ['mom','baby'].forEach(u => {
-        if (!userData[u].planData) userData[u].planData = initEmptyPlan();
-        if (!userData[u].history) userData[u].history = {};
-        if (!userData[u].mealOrder) userData[u].mealOrder = {};
-        (recipes[u] || []).forEach(r => { 
-            if (!userData[u].history[r.id]) userData[u].history[r.id] = []; 
-        });
-        weekDates.forEach(d => {
-            if (!userData[u].planData[d.dateStr]) {
-                userData[u].planData[d.dateStr] = {};
-                defaultMeals.forEach(m => { 
-                    let mealObj = {};
-                    customCategories.forEach(cat => {
-                        mealObj[cat] = [];
-                    });
-                    userData[u].planData[d.dateStr][m] = mealObj;
-                });
-            }
-        });
-    });
     
     ['mom', 'baby'].forEach(u => {
         (recipes[u] || []).forEach(recipe => {
@@ -1448,39 +1510,58 @@ let currentSelectedSubCat = '';
         return [...defaultMeals];
     }
     
-    function renderPlanContent() {
-        const plan = currentPlan()[selectedDate] || {};
-        const meals = getMealsForDate(selectedDate);
-        let html = `<div class="selected-date-title"><span>📅 ${selectedDate}</span><div><button class="add-meal-btn" id="addMealBtn">+</button><span style="margin-left:8px;"></span></div></div>`;
-        const categories = customCategories;
-        for (let meal of meals) {
-            let defaultMealObj = {};
-customCategories.forEach(cat => {
-    defaultMealObj[cat] = [];
-});
-const mealData = plan[meal] || defaultMealObj;
-            let inner = '';
-            categories.forEach(cat => {
-                const list = mealData[cat] || [];
-                const tagsHtml = list.length ? list.map(name => {
-                    const recipe = currentRecipes().find(r => r.name === name);
-                    const count = recipe ? currentHistory(recipe.id).length : 0;
-                    return `<span class="recipe-tag" data-name="${name}">${name}${count ? `<span class="count-badge">${count}</span>` : ''}</span>`;
-                }).join('') : '<span style="font-size:12px;color:#aaa;"></span>';
-                // 获取分类颜色（支持动态新分类）
-const catColor = getCategoryStyle(cat);
-inner += `<div class="category-row">
-    <span class="category-title" data-cat="${cat}" style="background: ${catColor.bg}; color: ${catColor.text};">${cat}</span>
-    <div class="recipe-tags">${tagsHtml}</div>
-    <button class="add-btn-slim" data-meal="${meal}" data-category="${cat}" title="选择已有菜谱">+</button>
-</div>`;
-
-});
-            html += `<div class="meal-section"><div class="meal-header"><span class="arrow">▼</span> ${meal}<button class="delete-meal" data-meal="${meal}">✕</button></div><div class="meal-content">${inner}</div></div>`;
-        }
-        return html;
+ function renderPlanContent() {
+    const plan = currentPlan()[selectedDate] || {};
+    const meals = getMealsForDate(selectedDate);
+    
+    // 获取当前日期的备注
+    const notes = userData[currentUser].notes || {};
+    const currentNote = notes[selectedDate] || '';
+    
+    let html = `<div class="selected-date-title">
+        <span>📅 ${selectedDate}</span>
+        <div style="display: flex; gap: 5px; align-items: center;">
+    <button id="addNoteBtn" title="添加备注" style="background: transparent; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 15px; cursor: pointer; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; line-height: 1;">💭</button>
+    <button id="addMealBtn" title="添加餐次" style="background: transparent; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 22px; font-weight: 400; cursor: pointer; color: var(--primary); display: inline-flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+</div>
+    </div>`;
+    
+    // 显示备注（如果有）
+    if (currentNote) {
+        html += `<div class="daily-note" style="background: var(--primary-bg); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: var(--primary); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <span style="flex:1;">📝 ${escapeHtml(currentNote)}</span>
+            <button class="delete-note-btn" style="background: none; border: none; font-size: 14px; cursor: pointer; color: #999; padding: 0 4px;" title="删除备注">✕</button>
+        </div>`;
     }
     
+    const categories = customCategories;
+    for (let meal of meals) {
+        let defaultMealObj = {};
+        customCategories.forEach(cat => {
+            defaultMealObj[cat] = [];
+        });
+        const mealData = plan[meal] || defaultMealObj;
+        let inner = '';
+        categories.forEach(cat => {
+            const list = mealData[cat] || [];
+            const tagsHtml = list.length ? list.map(name => {
+                const recipe = currentRecipes().find(r => r.name === name);
+                const count = recipe ? currentHistory(recipe.id).length : 0;
+                return `<span class="recipe-tag" data-name="${name}">${name}${count ? `<span class="count-badge">${count}</span>` : ''}</span>`;
+            }).join('') : '<span style="font-size:12px;color:#aaa;"></span>';
+            const catColor = getCategoryStyle(cat);
+            inner += `<div class="category-row">
+                <span class="category-title" data-cat="${cat}" style="background: ${catColor.bg}; color: ${catColor.text};">${cat}</span>
+                <div class="recipe-tags">${tagsHtml}</div>
+                <button class="add-btn-slim" data-meal="${meal}" data-category="${cat}" title="选择已有菜谱">+</button>
+            </div>`;
+        });
+        html += `<div class="meal-section"><div class="meal-header"><span class="arrow">▼</span> ${meal}<button class="delete-meal" data-meal="${meal}">✕</button></div><div class="meal-content">${inner}</div></div>`;
+    }
+    return html;
+}
+
+
   function renderPlanPage() {
     // 先渲染星期列表（不带箭头）
     const dateItems = weekDates.map((d, index) => `
@@ -1509,13 +1590,20 @@ inner += `<div class="category-row">
         </div>
     `;
 }
+
+
+// 显示添加餐次弹窗
+function showAddMealModal() {
+    document.getElementById('newMealName').value = '';
+    document.getElementById('addMealModal').classList.add('active');
+}
+
 function refreshPlan() {
     const pc = document.getElementById('planContent');
     if (pc) { 
         pc.innerHTML = renderPlanContent(); 
-        attachPlanEvents();  // 只绑定计划内容的事件
+        attachPlanEvents();
     }
-    // 移除 attachDateNav() 调用，避免重复绑定日期事件
     
     // 刷新后重新高亮当前选中的日期
     const activeDateItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
@@ -1526,19 +1614,160 @@ function refreshPlan() {
         activeDateItem.classList.add('active');
     }
     
-    // 添加餐次按钮事件（只绑定一次）
+    // 添加餐次按钮事件
     const addMealBtn = document.getElementById('addMealBtn');
     if (addMealBtn && !addMealBtn._hasListener) {
         addMealBtn.addEventListener('click', showAddMealModal);
         addMealBtn._hasListener = true;
     }
-}
-
-    function showAddMealModal() {
-        document.getElementById('newMealName').value = '';
-        document.getElementById('addMealModal').classList.add('active');
+    
+    // 添加备注按钮事件
+    const addNoteBtn = document.getElementById('addNoteBtn');
+    if (addNoteBtn && !addNoteBtn._noteListener) {
+        addNoteBtn.addEventListener('click', showAddNoteModal);
+        addNoteBtn._noteListener = true;
     }
     
+    // 更新备注按钮的圆点提示状态
+    if (addNoteBtn) {
+        const notes = userData[currentUser].notes || {};
+        const hasNote = notes[selectedDate] && notes[selectedDate].trim() !== '';
+        if (hasNote) {
+            addNoteBtn.classList.add('has-note');
+        } else {
+            addNoteBtn.classList.remove('has-note');
+        }
+    }
+    
+    // 删除备注按钮事件
+    const deleteNoteBtn = document.querySelector('.delete-note-btn');
+    if (deleteNoteBtn && !deleteNoteBtn._deleteListener) {
+        deleteNoteBtn._deleteListener = true;
+        deleteNoteBtn.addEventListener('click', () => {
+            if (confirm('删除备注？')) {
+                const notes = userData[currentUser].notes || {};
+                delete notes[selectedDate];
+                userData[currentUser].notes = notes;
+                saveData();
+                refreshPlan();
+            }
+        });
+    }
+}
+
+
+function refreshPlan() {
+    const pc = document.getElementById('planContent');
+    if (pc) { 
+        pc.innerHTML = renderPlanContent(); 
+        attachPlanEvents();
+    }
+    
+    // 刷新后重新高亮当前选中的日期
+    const activeDateItem = document.querySelector(`.date-item[data-date="${selectedDate}"]`);
+    if (activeDateItem) {
+        document.querySelectorAll('.date-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        activeDateItem.classList.add('active');
+    }
+    
+    // 添加餐次按钮事件
+    const addMealBtn = document.getElementById('addMealBtn');
+    if (addMealBtn && !addMealBtn._hasListener) {
+        addMealBtn.addEventListener('click', showAddMealModal);
+        addMealBtn._hasListener = true;
+    }
+    
+    // 添加备注按钮事件
+    const addNoteBtn = document.getElementById('addNoteBtn');
+    if (addNoteBtn && !addNoteBtn._noteListener) {
+        addNoteBtn.addEventListener('click', showAddNoteModal);
+        addNoteBtn._noteListener = true;
+    }
+    
+    // 更新备注按钮的圆点提示状态
+    if (addNoteBtn) {
+        const notes = userData[currentUser].notes || {};
+        const hasNote = notes[selectedDate] && notes[selectedDate].trim() !== '';
+        if (hasNote) {
+            addNoteBtn.classList.add('has-note');
+        } else {
+            addNoteBtn.classList.remove('has-note');
+        }
+    }
+    
+    // 删除备注按钮事件
+    const deleteNoteBtn = document.querySelector('.delete-note-btn');
+    if (deleteNoteBtn && !deleteNoteBtn._deleteListener) {
+        deleteNoteBtn._deleteListener = true;
+        deleteNoteBtn.addEventListener('click', () => {
+            if (confirm('删除备注？')) {
+                const notes = userData[currentUser].notes || {};
+                delete notes[selectedDate];
+                userData[currentUser].notes = notes;
+                saveData();
+                refreshPlan();
+            }
+        });
+    }
+}
+
+    // 显示添加备注弹窗
+function showAddNoteModal() {
+    const notes = userData[currentUser].notes || {};
+    const currentNote = notes[selectedDate] || '';
+    
+    // 创建临时弹窗
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 320px;">
+            <div class="modal-title">📝 添加备注</div>
+            <div class="setting-group">
+                <label class="setting-label">备注内容</label>
+                <textarea id="noteContent" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; min-height: 100px; resize: vertical;" placeholder="例如：今天宝宝胃口不好、需要多喝水...">${escapeHtml(currentNote)}</textarea>
+            </div>
+            <div class="modal-buttons" style="display: flex; gap: 8px;">
+                <button class="modal-btn modal-btn-primary" id="saveNoteBtn" style="flex:1;">保存</button>
+                <button class="modal-btn modal-btn-secondary" id="cancelNoteBtn" style="flex:1;">取消</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 保存按钮
+    const saveBtn = modal.querySelector('#saveNoteBtn');
+    saveBtn.onclick = () => {
+        const noteContent = modal.querySelector('#noteContent').value.trim();
+        
+        if (!userData[currentUser].notes) {
+            userData[currentUser].notes = {};
+        }
+        
+        if (noteContent) {
+            userData[currentUser].notes[selectedDate] = noteContent;
+        } else {
+            delete userData[currentUser].notes[selectedDate];
+        }
+        
+        saveData();
+        modal.remove();
+        refreshPlan();
+    };
+    
+    // 取消按钮
+    const cancelBtn = modal.querySelector('#cancelNoteBtn');
+    cancelBtn.onclick = () => {
+        modal.remove();
+    };
+    
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
     function addNewMeal() {
         const newMeal = document.getElementById('newMealName').value.trim();
         if (!newMeal) return;
