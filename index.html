@@ -2432,74 +2432,96 @@ function initCategoryEditor() {
     }
     
     // 添加主分类
-   // 添加主分类
-document.getElementById('addCategoryBtn').onclick = () => {
-    const newName = document.getElementById('newCategoryName').value.trim();
-    if (!newName) return;
-    if (customCategories.includes(newName)) { alert('类别已存在'); return; }
-    customCategories.push(newName);
-    saveCategories();
-    document.getElementById('newCategoryName').value = '';
-    renderCategoryList();
-    updateSubManageSelect();
-    renderSubcategoryListInModal();
-    
-    // 【关键】更新编辑弹窗中的主分类下拉框
-    const editMainCatSelect = document.getElementById('editMainCategory');
-    if (editMainCatSelect) {
-        // 保存当前选中值
-        const currentVal = editMainCatSelect.value;
-        // 重新生成选项
-        editMainCatSelect.innerHTML = customCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        editMainCatSelect.value = currentVal;
-        // 触发 change 事件更新子分类
-        if (editMainCatSelect._changeHandler) {
-            editMainCatSelect._changeHandler();
-        }
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    if (addCategoryBtn) {
+        addCategoryBtn.onclick = () => {
+            const newName = document.getElementById('newCategoryName').value.trim();
+            if (!newName) return;
+            if (customCategories.includes(newName)) { 
+                alert('类别已存在'); 
+                return; 
+            }
+            customCategories.push(newName);
+            saveCategories();
+            document.getElementById('newCategoryName').value = '';
+            renderCategoryList();
+            updateSubManageSelect();
+            renderSubcategoryListInModal();
+            
+            // 更新编辑弹窗中的主分类下拉框
+            const editMainCatSelect = document.getElementById('editMainCategory');
+            if (editMainCatSelect) {
+                const currentVal = editMainCatSelect.value;
+                editMainCatSelect.innerHTML = customCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+                editMainCatSelect.value = currentVal;
+                if (editMainCatSelect._changeHandler) {
+                    editMainCatSelect._changeHandler();
+                }
+            }
+            
+            // 刷新菜谱库页面
+            const activePage = document.querySelector('.nav-item.active')?.dataset.page;
+            if (activePage === 'recipe') {
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    mainContent.innerHTML = renderRecipePage();
+                    initRecipe();
+                    initCategoryEditor();
+                }
+            }
+        };
     }
     
-    // 【关键】如果当前在菜谱库页面，刷新菜谱库页面以更新分类筛选按钮
-    const activePage = document.querySelector('.nav-item.active')?.dataset.page;
-    if (activePage === 'recipe') {
-        // 重新渲染菜谱库页面
-        const mainContent = document.getElementById('mainContent');
-        if (mainContent) {
-            mainContent.innerHTML = renderRecipePage();
-            initRecipe();
-            initCategoryEditor(); // 重新初始化编辑器，保持事件绑定
-        }
-    }
-};
-
-
-    // 添加子分类
-    document.getElementById('addSubCategoryBtnInModal').onclick = () => {
-        const mainCat = document.getElementById('manageMainCat').value;
-        const newSub = document.getElementById('newSubCatNameInModal').value.trim();
-        if (newSub && !subCategories[mainCat].includes(newSub)) {
+    // 添加子分类 - 修复
+    const addSubBtn = document.getElementById('addSubCategoryBtnInModal');
+    if (addSubBtn) {
+        addSubBtn.removeEventListener('click', addSubBtn._subHandler);
+        addSubBtn._subHandler = () => {
+            const mainCat = document.getElementById('manageMainCat').value;
+            const newSub = document.getElementById('newSubCatNameInModal').value.trim();
+            
+            if (!newSub) {
+                alert('请输入子分类名称');
+                return;
+            }
+            
+            if (!subCategories[mainCat]) {
+                subCategories[mainCat] = [];
+            }
+            
+            if (subCategories[mainCat].includes(newSub)) {
+                alert('子分类已存在');
+                return;
+            }
+            
             subCategories[mainCat].push(newSub);
             saveSubCategories();
+            document.getElementById('newSubCatNameInModal').value = '';
             renderSubcategoryListInModal();
             updateSubCategorySelect(mainCat);
-            document.getElementById('newSubCatNameInModal').value = '';
+            
             if (currentMainFilter === mainCat && !currentSubFilter) {
                 const searchValue = document.getElementById('recipeSearch')?.value || '';
                 renderLibrary(mainCat, searchValue);
                 updateSubcategoryBar();
             }
-        } else {
-            alert('子分类已存在或为空');
-        }
-    };
+        };
+        addSubBtn.addEventListener('click', addSubBtn._subHandler);
+    }
     
     // 关闭弹窗
-    document.getElementById('closeCategoryEditBtn').onclick = () => {
-        document.getElementById('categoryEditModal').classList.remove('active');
-    };
+    const closeBtn = document.getElementById('closeCategoryEditBtn');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            document.getElementById('categoryEditModal').classList.remove('active');
+        };
+    }
     
     // 初始化子分类下拉框
     updateSubManageSelect();
 }
+
+
 
 // 更新子分类管理弹窗中的主分类下拉框
 function updateSubManageSelect() {
