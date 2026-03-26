@@ -654,13 +654,19 @@
 }
     /* 分类标题 - 调整大小 */
 .category-title {
-    font-size: 11px;  /* 与菜谱标签一致 */
+    font-size: 11px;
     font-weight: 600;
     min-width: 36px;
-    padding: 3px 8px;  /* 调整内边距使其与菜谱标签视觉一致 */
+    padding: 3px 8px;
     border-radius: 16px;
     text-align: center;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+    height: auto;
+    box-sizing: border-box;
 }
        
 /* 改为基础样式，颜色通过行内样式动态设置 */
@@ -2811,24 +2817,16 @@ function renderCategoryList() {
                 alert('默认分类不能删除');
                 return;
             }
-            if (confirm(`确定删除类别「${catName}」吗？\n该类别下的菜谱将移至「其他」类别`)) {
-                const index = customCategories.indexOf(catName);
-                if (index !== -1) {
-                    customCategories.splice(index, 1);
-                    saveCategories();
-                    
-                    ['mom', 'baby'].forEach(u => {
-                        (recipes[u] || []).forEach(recipe => {
-                            if (recipe.mainCat === catName) {
-                                recipe.mainCat = '其他';
-                            }
-                        });
-                    });
-                    
-                    if (!customCategories.includes('其他')) {
-                        customCategories.push('其他');
-                        saveCategories();
-                    }
+            if (confirm(`确定删除类别「${catName}」吗？该类别下的菜谱将无法使用`)) {
+    const index = customCategories.indexOf(catName);
+    if (index !== -1) {
+        customCategories.splice(index, 1);
+        saveCategories();
+        
+        // 删除该分类下的所有菜谱
+        ['mom', 'baby'].forEach(u => {
+            recipes[u] = (recipes[u] || []).filter(recipe => recipe.mainCat !== catName);
+        });
                     
                     saveData();
                     renderCategoryList();
