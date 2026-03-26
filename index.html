@@ -964,7 +964,7 @@
         <h1>三餐计划</h1>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">
-        <button class="switch-user-btn" id="switchUserBtn">👩 妈妈</button>
+        <button class="switch-user-btn" id="switchUserBtn">👩🏻</button>
         <button class="switch-user-btn" id="headerSettingsBtn" style="background: transparent; border: none; padding: 0px 0px; border-radius: 30px; font-size: 13px; font-weight: 500; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 0px;">
     ⚙️
 </button>
@@ -2034,7 +2034,7 @@ function applyTheme() {
     // 更新切换按钮的文字
     const switchBtn = document.getElementById('switchUserBtn');
     if (switchBtn) {
-        switchBtn.innerHTML = currentUser === 'mom' ? '👩 妈妈' : '👶 宝宝';
+        switchBtn.innerHTML = currentUser === 'mom' ? '👩🏻' : '👧🏻';
     }
 }   
     function switchUser() { 
@@ -2043,12 +2043,7 @@ function applyTheme() {
     applyTheme(); 
     saveData(); 
     
-    // 更新切换按钮的文字
-    const switchBtn = document.getElementById('switchUserBtn');
-    if (switchBtn) {
-        switchBtn.innerHTML = currentUser === 'mom' ? '👩 妈妈' : '👶 宝宝';
-    }
-    
+     
     const active = document.querySelector('.nav-item.active').dataset.page; 
     showPage(active);
     
