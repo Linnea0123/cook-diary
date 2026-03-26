@@ -102,6 +102,10 @@
             justify-content: space-around;
             padding: 4px 16px;
         }
+        .category-title[data-cat] {
+    background: #f0f0f0;
+    color: #555;
+}
 
         .nav-item {
             display: flex;
@@ -570,8 +574,8 @@
 <div class="modal" id="previewModal">
     <div class="modal-content">
         <div id="previewName" style="font-size:20px;font-weight:600;text-align:center; display: flex; align-items: center; justify-content: center; gap: 8px;"></div>
-      <div class="modal-image" id="previewImageContainer"></div>
-<div id="previewQuantity" style="text-align: center; font-size: 14px; color: #e06b6b; margin: 8px 0 4px 0; font-weight: 500;"></div>
+      <div id="previewImageContainer" style="width: 80%; aspect-ratio: 1 / 1; background: #f5f7fa; border-radius: 16px; margin: 12px auto; display: flex; align-items: center; justify-content: center; overflow: hidden;"></div>
+      <div id="previewQuantity" style="text-align: center; font-size: 14px; color: #e06b6b; margin: 8px 0 4px 0; font-weight: 500;"></div>
 <div class="history-list" id="previewHistory"></div>
 
         <div class="modal-buttons" style="display: flex; gap: 8px;">
@@ -583,45 +587,44 @@
 </div>
 
 <!-- 编辑弹窗 -->
-<!-- 编辑弹窗 -->
+
+<!-- 编辑弹窗 - 图片留白版本 -->
 <div class="modal" id="editModal">
-    <div class="modal-content">
-        <h3 style="margin-bottom:16px; color: var(--primary);">编辑菜谱</h3>
+    <div class="modal-content" style="padding: 16px 18px;">
+        <h3 style="margin-bottom: 10px; font-size: 16px; color: var(--primary);">编辑菜谱</h3>
         <input type="hidden" id="editId">
         
-        <!-- 图片预览和上传区域 -->
-        <div style="margin-bottom: 16px;">
-            <div id="editImagePreview" style="width: 100%; aspect-ratio: 1 / 1; background: #f5f7fa; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border);">
-                <span style="color: #999;">📷 暂无图片</span>
-            </div>
-            <input type="file" id="editImageUpload" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px;">
+        <!-- 图片预览和上传区域 - 图片居中显示，四周留白 -->
+        <div style="margin-bottom: 8px;">
+            <div id="editImagePreview" style="width: 80%; aspect-ratio: 1 / 1; background: #f5f7fa; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 6px auto; border: 1px solid var(--border);">
+    <span style="color: #999; font-size: 12px;">📷 暂无图片</span>
+</div>
+<input type="file" id="editImageUpload" accept="image/*" style="width: 100%; padding: 5px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 12px;">
+        
         </div>
         
-        <input type="text" id="editName" placeholder="菜名" style="width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd; font-size: 14px;">
+        <!-- 其余内容保持不变 -->
+        <input type="text" id="editName" placeholder="菜名" style="width:100%; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; border:1px solid #ddd; font-size: 13px;">
         
-        
-        <!-- 主分类选择 -->
-<select id="editMainCategory" style="width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd; font-size: 14px;">
-    <option value="主食">主食</option>
-    <option value="蔬菜">蔬菜</option>
-    <option value="肉鱼">肉鱼</option>
-    <option value="蛋">蛋</option>
-    <option value="油脂">油脂</option>
-    <option value="水果">水果</option>
-</select>
+        <select id="editMainCategory" style="width:100%; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; border:1px solid #ddd; font-size: 13px;">
+            <option value="主食">主食</option>
+            <option value="蔬菜">蔬菜</option>
+            <option value="肉鱼">肉鱼</option>
+            <option value="蛋">蛋</option>
+            <option value="油脂">油脂</option>
+            <option value="水果">水果</option>
+        </select>
 
-<!-- 子分类选择 -->
-<select id="editSubCategory" style="width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd; font-size: 14px;">
-    <option value="">无子分类</option>
-</select>
+        <select id="editSubCategory" style="width:100%; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; border:1px solid #ddd; font-size: 13px;">
+            <option value="">无子分类</option>
+        </select>
 
-<!-- 食用量输入框（在子分类后面添加）-->
-<input type="text" id="editQuantity" placeholder="食用量 (例: 50g, 1个)" style="width:100%; padding:10px; margin-bottom:12px; border-radius:12px; border:1px solid #ddd; font-size: 14px;">
+        <input type="text" id="editQuantity" placeholder="食用量 (例: 50g, 1个)" style="width:100%; padding: 8px 10px; margin-bottom: 8px; border-radius: 10px; border:1px solid #ddd; font-size: 13px;">
         
-        <div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 16px;">
-            <button class="modal-btn modal-btn-primary" id="saveEditBtn" style="flex:1; padding:10px; border-radius:40px; font-size:14px; cursor:pointer; background: #f0f0f0; color: #333; border: none;">保存</button>
-            <button class="modal-btn modal-btn-danger" id="deleteBtn" style="flex:1; padding:10px; border-radius:40px; font-size:14px; cursor:pointer; background: #ffebee; color: #c62828; border: none;">删除</button>
-            <button class="modal-btn modal-btn-secondary" id="closeEditBtn" style="flex:1; padding:10px; border-radius:40px; font-size:14px; cursor:pointer; background: #f0f0f0; color: #333; border: none;">取消</button>
+        <div class="modal-buttons" style="display: flex; gap: 8px; margin-top: 10px;">
+            <button class="modal-btn modal-btn-primary" id="saveEditBtn" style="flex:1; padding: 8px 12px; border-radius: 30px; font-size: 13px; cursor:pointer; background: #f0f0f0; color: #333; border: none;">保存</button>
+            <button class="modal-btn modal-btn-danger" id="deleteBtn" style="flex:1; padding: 8px 12px; border-radius: 30px; font-size: 13px; cursor:pointer; background: #ffebee; color: #c62828; border: none;">删除</button>
+            <button class="modal-btn modal-btn-secondary" id="closeEditBtn" style="flex:1; padding: 8px 12px; border-radius: 30px; font-size: 13px; cursor:pointer; background: #f0f0f0; color: #333; border: none;">取消</button>
         </div>
     </div>
 </div>
@@ -1209,7 +1212,7 @@ function showPreview(recipe, source = 'plan') {
     document.getElementById('previewHistory').innerHTML = hist.slice(0,8).map(h => `<div class="history-item">• ${h}</div>`).join('') || '<div>无记录</div>';
     const imgContainer = document.getElementById('previewImageContainer');
     if (recipe.image && recipe.image.trim() !== '') {
-        imgContainer.innerHTML = `<img src="${recipe.image}" style="width:100%;height:100%;object-fit:cover;">`;
+       imgContainer.innerHTML = `<img src="${recipe.image}" style="max-width:90%; max-height:90%; object-fit:contain; display: block; margin: auto;">`; 
     } else {
         imgContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;">📷 暂无图片</div>';
     }
@@ -1272,14 +1275,20 @@ function renderRecipePage() {
         </div>
 
         
-        <div style="margin-bottom: 2px;">
-    <div class="category-filter" id="categoryFilter" style="display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;">
-        <span class="filter-tag active" data-category="all">全部</span>
-        ${getCategories().map(c => `<span class="filter-tag" data-category="${c}">${c}</span>`).join('')}
+        
+<div style="margin-bottom: 12px;">
+    <!-- 第一行：全部按钮单独一行 -->
+    <div style="margin-bottom: 8px;">
+        <span class="filter-tag active" id="allFilterBtn" data-category="all" style="display: inline-block; padding: 5px 16px; background: var(--primary-light); color: var(--primary); border-radius: 30px; font-size: 13px; cursor: pointer;">全部</span>
     </div>
-    <!-- 子分类栏 - 放在主分类栏下方 -->
-    <div id="subcategoryBar" class="subcategory-bar" style="display:none; margin-top: 12px; margin-bottom: 8px; gap: 8px; overflow-x: auto;"></div>
+    <!-- 第二行：所有主分类（可横向滚动，完全显示） -->
+    <div class="category-filter" id="categoryFilter" style="display: flex; gap: 8px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 4px;">
+        ${getCategories().map(c => `<span class="filter-tag" data-category="${c}" style="flex-shrink: 0; padding: 5px 14px; background: #f5f7fa; border-radius: 30px; font-size: 13px; cursor: pointer; white-space: nowrap;">${c}</span>`).join('')}
+    </div>
+    <!-- 第三行：子分类栏 -->
+    <div id="subcategoryBar" class="subcategory-bar" style="display:none; margin-top: 12px; gap: 8px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;"></div>
 </div>
+
         <div class="library-text-grid" id="libraryGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
     </div>`; 
 
@@ -1357,6 +1366,50 @@ function updateSubcategoryBar() {
 function initRecipe() { 
     renderLibrary(); 
     
+    // 在 initRecipe() 函数中，找到筛选绑定部分，添加以下代码：
+
+// 绑定“全部”按钮
+const allFilterBtn = document.getElementById('allFilterBtn');
+if (allFilterBtn) {
+    allFilterBtn.removeEventListener('click', allFilterBtn._allHandler);
+    allFilterBtn._allHandler = () => {
+        // 清除所有主分类的高亮
+        document.querySelectorAll('.filter-tag').forEach(f => f.classList.remove('active'));
+        allFilterBtn.classList.add('active');
+        currentMainFilter = 'all';
+        currentSubFilter = '';
+        currentSelectedMainCat = 'all';
+        currentSelectedSubCat = '';
+        // 隐藏子分类栏
+        const subBar = document.getElementById('subcategoryBar');
+        if (subBar) subBar.style.display = 'none';
+        const searchValue = document.getElementById('recipeSearch') ? document.getElementById('recipeSearch').value : '';
+        renderLibrary('all', searchValue);
+    };
+    allFilterBtn.addEventListener('click', allFilterBtn._allHandler);
+}
+
+// 修改主分类筛选的点击逻辑，确保点击主分类时“全部”按钮取消高亮
+document.querySelectorAll('.filter-tag').forEach(t => {
+    t.removeEventListener('click', t._filterHandler);
+    t._filterHandler = () => {
+        // 取消全部按钮的高亮
+        const allBtn = document.getElementById('allFilterBtn');
+        if (allBtn) allBtn.classList.remove('active');
+        
+        document.querySelectorAll('.filter-tag').forEach(f => f.classList.remove('active'));
+        t.classList.add('active');
+        currentMainFilter = t.dataset.category;
+        currentSubFilter = '';
+        currentSelectedMainCat = t.dataset.category;
+        currentSelectedSubCat = '';
+        const searchValue = document.getElementById('recipeSearch') ? document.getElementById('recipeSearch').value : '';
+        renderLibrary(currentMainFilter, searchValue);
+        updateSubcategoryBar();
+    };
+    t.addEventListener('click', t._filterHandler);
+});
+
     // 初始化当前选中的主分类
     const activeFilter = document.querySelector('.filter-tag.active');
     if (activeFilter) {
@@ -1371,28 +1424,47 @@ function initRecipe() {
     const addRecipeBtn = document.getElementById('addRecipeBtn');
     if (addRecipeBtn) {
         addRecipeBtn.removeEventListener('click', addRecipeBtn._handler);
+        
+
+
+
         addRecipeBtn._handler = () => {
-            document.getElementById('editId').value = '';
-            document.getElementById('editName').value = '';
-            
-            // 根据当前选中的主分类设置默认值
-            let defaultMainCat = '主食';
-            let defaultSubCat = '';
-            
-            if (currentSelectedMainCat !== 'all' && currentSelectedMainCat) {
-                defaultMainCat = currentSelectedMainCat;
-                defaultSubCat = currentSelectedSubCat || '';
-            }
-            
-            document.getElementById('editMainCategory').value = defaultMainCat;
-            document.getElementById('editSubCategory').value = defaultSubCat;
-            document.getElementById('editQuantity').value = '';
-            updateSubCategorySelect(defaultMainCat);
-            // 确保子分类下拉框选中正确的值
-            setTimeout(() => {
-                document.getElementById('editSubCategory').value = defaultSubCat;
-            }, 50);
-            
+    document.getElementById('editId').value = '';
+    document.getElementById('editName').value = '';
+    
+    let defaultMainCat = '主食';
+    let defaultSubCat = '';
+    
+    if (currentSelectedMainCat !== 'all' && currentSelectedMainCat) {
+        defaultMainCat = currentSelectedMainCat;
+        defaultSubCat = currentSelectedSubCat || '';
+    }
+    
+    document.getElementById('editMainCategory').value = defaultMainCat;
+    document.getElementById('editQuantity').value = '';
+    
+    // 【修复】先清空并重新生成子分类下拉框
+    const subSel = document.getElementById('editSubCategory');
+    subSel.innerHTML = '<option value="">无子分类</option>';
+    if (subCategories[defaultMainCat]) {
+        subSel.innerHTML += subCategories[defaultMainCat].map(sub => `<option value="${sub}">${sub}</option>`).join('');
+    }
+    subSel.value = defaultSubCat;
+    
+    // 添加 change 事件监听，当主分类变化时更新子分类
+    const mainCatSelect = document.getElementById('editMainCategory');
+    const oldChangeHandler = mainCatSelect._changeHandler;
+    if (oldChangeHandler) mainCatSelect.removeEventListener('change', oldChangeHandler);
+    mainCatSelect._changeHandler = () => {
+        const selectedMain = mainCatSelect.value;
+        const subSelect = document.getElementById('editSubCategory');
+        subSelect.innerHTML = '<option value="">无子分类</option>';
+        if (subCategories[selectedMain]) {
+            subSelect.innerHTML += subCategories[selectedMain].map(sub => `<option value="${sub}">${sub}</option>`).join('');
+        }
+        subSelect.value = '';
+    };
+    mainCatSelect.addEventListener('change', mainCatSelect._changeHandler);
             const previewDiv = document.getElementById('editImagePreview');
             previewDiv.innerHTML = '<span style="color: #999;">📷 暂无图片</span>';
             if (document.getElementById('editImageUrl')) {
@@ -1480,33 +1552,45 @@ function initCategoryEditor() {
     }
     
     // 添加主分类
-    document.getElementById('addCategoryBtn').onclick = () => {
-        const newName = document.getElementById('newCategoryName').value.trim();
-        if (!newName) {
-            alert('请输入类别名称');
-            return;
-        }
-        if (customCategories.includes(newName)) {
-            alert('类别已存在');
-            return;
-        }
-        customCategories.push(newName);
-        saveCategories();
-        document.getElementById('newCategoryName').value = '';
-        renderCategoryList();
-        // 刷新子分类下拉框
-        updateSubManageSelect();
-        renderSubcategoryListInModal();
-        // 刷新菜谱库页面
-        const activePage = document.querySelector('.nav-item.active').dataset.page;
-        if (activePage === 'recipe') {
-            const mainContent = document.getElementById('mainContent');
-            mainContent.innerHTML = renderRecipePage();
-            initRecipe();
-            initCategoryEditor();
-        }
-    };
+   document.getElementById('addCategoryBtn').onclick = () => {
+    const newName = document.getElementById('newCategoryName').value.trim();
+    if (!newName) return;
+    if (customCategories.includes(newName)) { alert('类别已存在'); return; }
+    customCategories.push(newName);
+    saveCategories();
+    document.getElementById('newCategoryName').value = '';
+    renderCategoryList();
+    updateSubManageSelect();
+    renderSubcategoryListInModal();
     
+    // 【新增】更新编辑弹窗中的主分类下拉框
+    const editMainCatSelect = document.getElementById('editMainCategory');
+    if (editMainCatSelect) {
+        // 保存当前选中值
+        const currentVal = editMainCatSelect.value;
+        // 重新生成选项
+        editMainCatSelect.innerHTML = customCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        editMainCatSelect.value = currentVal;
+        // 触发 change 事件更新子分类
+        if (editMainCatSelect._changeHandler) {
+            editMainCatSelect._changeHandler();
+        }
+    }
+    
+    // 【新增】更新计划页面的分类显示（如果当前在计划页）
+    const activePage = document.querySelector('.nav-item.active').dataset.page;
+    if (activePage === 'plan') {
+        refreshPlan();  // 重新渲染计划页面，新分类会出现在餐次中
+    } else if (activePage === 'recipe') {
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = renderRecipePage();
+        initRecipe();
+        initCategoryEditor();
+    }
+};
+
+
+
     // 添加子分类
     document.getElementById('addSubCategoryBtnInModal').onclick = () => {
         const mainCat = document.getElementById('manageMainCat').value;
@@ -1649,26 +1733,34 @@ function renderCategoryList() {
     if (!container) return;
     
     
-    container.innerHTML = customCategories.map(cat => {
-    // 获取分类对应的颜色样式
-    let bgColor = '#f0f0f0';
-    let textColor = '#555';
-    if (cat === '主食') { bgColor = '#fff3e0'; textColor = '#c97e0a'; }
-    else if (cat === '蔬菜') { bgColor = '#e8f5e9'; textColor = '#2e7d32'; }
-    else if (cat === '肉鱼') { bgColor = '#ffebee'; textColor = '#c62828'; }
-    else if (cat === '蛋') { bgColor = '#fff9c4'; textColor = '#b26a00'; }
-    else if (cat === '油脂') { bgColor = '#f3e5f5'; textColor = '#7b1fa2'; }
-    else if (cat === '水果') { bgColor = '#e1f5fe'; textColor = '#0288d1'; }
-    
-    return `
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">
+   container.innerHTML = customCategories.map(cat => {
+    // 预定义颜色映射
+    const colorMap = {
+        '主食': { bg: '#fff3e0', text: '#c97e0a' },
+        '蔬菜': { bg: '#e8f5e9', text: '#2e7d32' },
+        '肉鱼': { bg: '#ffebee', text: '#c62828' },
+        '蛋': { bg: '#fff9c4', text: '#b26a00' },
+        '油脂': { bg: '#f3e5f5', text: '#7b1fa2' },
+        '水果': { bg: '#e1f5fe', text: '#0288d1' }
+    };
+    let bgColor, textColor;
+    if (colorMap[cat]) {
+        bgColor = colorMap[cat].bg;
+        textColor = colorMap[cat].text;
+    } else {
+        // 新分类使用渐变的柔和颜色（基于分类名的哈希）
+        const hash = cat.split('').reduce((a,b)=>a+b.charCodeAt(0),0);
+        const hue = hash % 360;
+        bgColor = `hsl(${hue}, 70%, 90%)`;
+        textColor = `hsl(${hue}, 70%, 35%)`;
+    }
+    return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">
         <span style="font-size: 13px; background: ${bgColor}; color: ${textColor}; padding: 4px 12px; border-radius: 20px; display: inline-block;">${cat}</span>
         <div style="display: flex; gap: 8px;">
             <button class="edit-cat-btn" data-cat="${cat}" style="background: none; border: none; font-size: 13px; cursor: pointer; color: #4a627a;">✏️</button>
             <button class="delete-cat-btn" data-cat="${cat}" style="background: none; border: none; font-size: 13px; cursor: pointer; ">x</button>
         </div>
-    </div>
-`;
+    </div>`;
 }).join('');
     
     // 编辑类别
@@ -1811,7 +1903,7 @@ function initImageUpload() {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const preview = document.getElementById('editImagePreview');
-                    preview.innerHTML = `<img src="${event.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                    preview.innerHTML = `<img src="${event.target.result}" style="max-width:90%; max-height:90%; object-fit:contain; display: block; margin: auto;">`;
                     // 保存图片为base64格式
                     if (!document.getElementById('editImageUrl')) {
                         const hiddenInput = document.createElement('input');
@@ -1846,7 +1938,7 @@ document.getElementById('editSubCategory').value = currentPreview.subCat || '';
         // 显示已有图片
         const previewDiv = document.getElementById('editImagePreview');
         if (currentPreview.image && currentPreview.image.startsWith('data:image')) {
-            previewDiv.innerHTML = `<img src="${currentPreview.image}" style="width:100%; height:100%; object-fit:cover;">`;
+            previewDiv.innerHTML = `<img src="${currentPreview.image}" style="max-width:90%; max-height:90%; object-fit:contain; display: block; margin: auto;">`;
         } else {
             previewDiv.innerHTML = '<span style="color: #999;">📷 暂无图片</span>';
         }
