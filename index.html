@@ -114,10 +114,10 @@
 
 .day-number .today {
     color: var(--primary);
-    
+    font-weight: 600;
     background: var(--primary-light);
     display: inline-block;
-    padding: 2px 5px;
+    padding: 0px 6px;
     border-radius: 20px;
 }
 
@@ -238,6 +238,8 @@
     background: var(--primary-bg);
     border-bottom: 2px solid var(--primary);
     color: var(--primary);
+    min-height: 50px;  /* 固定最小高度，与带按钮的列保持一致 */
+    box-sizing: border-box;
 }
 
 .shopping-list {
@@ -1769,7 +1771,7 @@ function renderRecipePage() {
  
        <div class="recipe-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: nowrap;">
     <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <h2 style="font-size: 18px; font-weight: 600; color: var(--primary); margin: 0;">📖 菜谱库</h2>
+       
         <button class="add-recipe-btn" id="addRecipeBtn" style="background: none; border: none; width: 28px; height: 28px; font-size: 20px; cursor: pointer; color: var(--primary); display: flex; align-items: center; justify-content: center; padding: 0;">+</button>
         <button id="editCategoryBtn" style="background: none; border: none; font-size: 13px; cursor: pointer; color: var(--primary); padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">✏️</button>
         <select id="timeRangeSelect" style="background: none; border: none; font-size: 13px; cursor: pointer; color: var(--primary); padding: 4px; font-weight: 500; outline: none;">
@@ -1809,41 +1811,40 @@ function renderShoppingPage() {
     const fridgeItems = shoppingData.fridge || [];
     const buyItems = shoppingData.buy || [];
     
-    
- const renderList = (items, location, title) => {
-    if (items.length === 0) {
-        return `<div class="empty-tip">📭 暂无${title}，点击上方按钮添加</div>`;
-    }
-    
-    return items.map(item => {
-        const subCatText = item.subCategory ? ` · ${item.subCategory}` : '';
-        return `
-        <div class="shopping-item" data-id="${item.id}" data-location="${location}">
-            <input type="checkbox" class="shopping-item-checkbox" ${item.checked ? 'checked' : ''} data-id="${item.id}" data-location="${location}">
-            <span class="shopping-item-name" data-id="${item.id}" data-location="${location}" data-name="${item.name}" style="${item.checked ? 'text-decoration: line-through; color: #999;' : ''}">${escapeHtml(item.name)}</span>
-            <span class="shopping-item-category" style="background: ${getCategoryColor(item.category).bg}; color: ${getCategoryColor(item.category).text};">${item.category}${subCatText}</span>
-            <button class="shopping-item-delete" data-id="${item.id}" data-location="${location}">✕</button>
-        </div>
-        `;
-    }).join('');
-};
-
+    const renderList = (items, location, title) => {
+        if (items.length === 0) {
+            return `<div class="empty-tip">📭 暂无${title}，点击上方按钮添加</div>`;
+        }
+        
+        return items.map(item => {
+            const subCatText = item.subCategory ? ` · ${item.subCategory}` : '';
+            return `
+            <div class="shopping-item" data-id="${item.id}" data-location="${location}">
+                <input type="checkbox" class="shopping-item-checkbox" ${item.checked ? 'checked' : ''} data-id="${item.id}" data-location="${location}">
+                <span class="shopping-item-name" data-id="${item.id}" data-location="${location}" data-name="${item.name}" style="${item.checked ? 'text-decoration: line-through; color: #999;' : ''}">${escapeHtml(item.name)}</span>
+                <span class="shopping-item-category" style="background: ${getCategoryColor(item.category).bg}; color: ${getCategoryColor(item.category).text};">${item.category}${subCatText}</span>
+                <button class="shopping-item-delete" data-id="${item.id}" data-location="${location}">✕</button>
+            </div>
+            `;
+        }).join('');
+    };
     
     return `
         <div class="shopping-page">
-            <div class="shopping-header">
-                <h2>🛒 购物清单</h2>
-                <button class="shopping-add-btn" id="shoppingAddBtn">+ 添加食材</button>
-            </div>
             <div class="shopping-container">
                 <div class="shopping-column">
-                    <div class="column-header">🧊 冰箱（已有）</div>
+                    <div class="column-header" style="display: flex; justify-content: center; align-items: center;">
+                        <span>🧊 冰箱（已有）</span>
+                    </div>
                     <div class="shopping-list" id="fridgeList">
                         ${renderList(fridgeItems, 'fridge', '冰箱')}
                     </div>
                 </div>
                 <div class="shopping-column">
-                    <div class="column-header">📝 待买</div>
+                    <div class="column-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>📝 待买</span>
+                        <button class="shopping-add-btn" id="shoppingAddBtn" style="background: var(--primary-light); border: none; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--primary); cursor: pointer;">+ 添加</button>
+                    </div>
                     <div class="shopping-list" id="buyList">
                         ${renderList(buyItems, 'buy', '待买')}
                     </div>
@@ -1852,7 +1853,6 @@ function renderShoppingPage() {
         </div>
     `;
 }
-
 
 // 渲染月历页面
 function renderCalendarPage() {
@@ -1960,6 +1960,7 @@ function getCategoryDotColor(category) {
     return colorMap[category] || '#999';
 }
 
+
 // 渲染指定月份
 function renderCalendarMonth(year, month) {
     const days = getCalendarDays(year, month);
@@ -2001,30 +2002,28 @@ function renderCalendarMonth(year, month) {
                                 const mealsData = isCurrentMonth ? getDayMealsWithColor(day.year, day.month, dayNum) : [];
                                 const isTodayFlag = isToday(day.year, day.month, dayNum);
                                 
-                                  return `
-    <div class="calendar-day-cell" style="${!isCurrentMonth ? 'background: #fafafa;' : ''}">
-        <div class="day-number">
-            <span class="${isTodayFlag ? 'today' : ''}">${dayNum}</span>
-        </div>
-        <div class="day-meals">
-          ${isCurrentMonth && mealsData.length > 0 ? mealsData.map(mealItem => `
-    <div class="day-meal-item">
-        <span class="meal-time-badge">${mealItem.meal}</span>
-        <div class="day-recipe-list">
-            ${mealItem.recipes.map(recipe => `
-                <div class="recipe-dot-item">
-                    <span class="recipe-color-dot" style="background: ${getCategoryDotColor(recipe.category)};"></span>
-                    <span class="recipe-name-text" title="${recipe.name}">${recipe.name}</span>
-                </div>
-            `).join('')}
-        </div>
-    </div>
-`).join('') : ''}  
-
-        </div>
-    </div>
-`;
-
+                                return `
+                                    <div class="calendar-day-cell">
+                                        <div class="day-number">
+                                           <span class="${isTodayFlag ? 'today' : ''}" style="${!isCurrentMonth ? 'color: #bbb; font-weight: normal;' : ''}">${dayNum}</span>
+                                            </div>
+                                        <div class="day-meals">
+                                            ${isCurrentMonth && mealsData.length > 0 ? mealsData.map(mealItem => `
+                                                <div class="day-meal-item">
+                                                    <span class="meal-time-badge">${mealItem.meal}</span>
+                                                    <div class="day-recipe-list">
+                                                        ${mealItem.recipes.map(recipe => `
+                                                            <div class="recipe-dot-item">
+                                                                <span class="recipe-color-dot" style="background: ${getCategoryDotColor(recipe.category)};"></span>
+                                                                <span class="recipe-name-text" title="${recipe.name}">${recipe.name}</span>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            `).join('') : ''}
+                                        </div>
+                                    </div>
+                                `;
                             }).join('')}
                         </div>
                     `).join('')}
@@ -2033,6 +2032,8 @@ function renderCalendarMonth(year, month) {
         </div>
     `;
 }
+
+
 
 // 月历页面状态
 let currentCalendarYear = new Date().getFullYear();
@@ -3012,6 +3013,8 @@ function updateShoppingSubCategorySelect(mainCat) {
 
 
 function initShoppingPage() {
+
+
     // 添加按钮事件
     const addBtn = document.getElementById('shoppingAddBtn');
     if (addBtn) {
