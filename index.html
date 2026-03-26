@@ -1147,24 +1147,37 @@ function updateSubCategorySelect(mainCat) {
 
 
 // 加载类别
+// 加载类别
+// 加载类别
 function loadCategories() {
     const saved = localStorage.getItem('custom_categories');
     if (saved) {
         try {
             customCategories = JSON.parse(saved);
-        } catch(e) {}
-    }
-    // 确保默认分类存在
-    const defaultCats = ['主食', '蔬菜', '肉鱼', '蛋', '油脂', '水果'];
-    for (let cat of defaultCats) {
-        if (!customCategories.includes(cat)) {
-            customCategories.push(cat);
+            if (!Array.isArray(customCategories)) {
+                customCategories = [];
+            }
+        } catch(e) {
+            customCategories = [];
         }
     }
+    
+    // 首次使用或数据损坏时，设置默认分类
+    if (!customCategories || customCategories.length === 0) {
+        customCategories = ['主食', '蔬菜', '肉鱼', '蛋', '油脂', '水果'];
+        saveCategories();
+    }
+    
+    // 【新增】清理子分类数据中不在 customCategories 中的孤立键
+    if (subCategories) {
+        for (let cat in subCategories) {
+            if (!customCategories.includes(cat)) {
+                delete subCategories[cat];
+            }
+        }
+        saveSubCategories();
+    }
 }
-
-
-
 // 购物数据存储
 let shoppingData = {
     fridge: [],  // 冰箱（已有）
@@ -2739,76 +2752,84 @@ function renderCategoryList() {
             bgPicker.addEventListener('input', updatePreview);
             textPicker.addEventListener('input', updatePreview);
             
-            modal.querySelector('#confirmEditBtn').onclick = () => {
-                const newName = nameInput.value.trim();
-                const newBgColor = bgPicker.value;
-                const newTextColor = textPicker.value;
-                
-                if (!newName) {
-                    alert('请输入分类名称');
-                    return;
-                }
-                
-                if (newName !== oldName && customCategories.includes(newName)) {
-                    alert('类别已存在');
-                    return;
-                }
-                
-                if (newName !== oldName) {
-                    const index = customCategories.indexOf(oldName);
-                    if (index !== -1) {
-                        customCategories[index] = newName;
-                        saveCategories();
-                        
-                        ['mom', 'baby'].forEach(u => {
-                            (recipes[u] || []).forEach(recipe => {
-                                if (recipe.mainCat === oldName) {
-                                    recipe.mainCat = newName;
-                                }
-                            });
-                        });
-                        
-                        const savedColors = localStorage.getItem('category_colors');
-                        if (savedColors) {
-                            const colors = JSON.parse(savedColors);
-                            if (colors[oldName]) {
-                                colors[newName] = { bg: newBgColor, text: newTextColor };
-                                delete colors[oldName];
-                                localStorage.setItem('category_colors', JSON.stringify(colors));
-                            } else {
-                                const newColors = {};
-                                newColors[newName] = { bg: newBgColor, text: newTextColor };
-                                localStorage.setItem('category_colors', JSON.stringify(newColors));
-                            }
-                        } else {
-                            const newColors = {};
-                            newColors[newName] = { bg: newBgColor, text: newTextColor };
-                            localStorage.setItem('category_colors', JSON.stringify(newColors));
-                        }
-                        
-                        saveData();
-                    }
-                } else {
-                    saveCategoryColor(newName, newBgColor, newTextColor);
-                }
-                
-                modal.remove();
-                renderCategoryList();
-                updateSubManageSelect();
-                renderSubcategoryListInModal();
-                
-                const activePage = document.querySelector('.nav-item.active')?.dataset.page;
-                if (activePage === 'recipe') {
-                    const mainContent = document.getElementById('mainContent');
-                    mainContent.innerHTML = renderRecipePage();
-                    initRecipe();
-                    initCategoryEditor();
-                }
-                if (activePage === 'plan') {
-                    refreshPlan();
-                }
-            };
+           modal.querySelector('#confirmEditBtn').onclick = () => {
+    const newName = nameInput.value.trim();
+    const newBgColor = bgPicker.value;
+    const newTextColor = textPicker.value;
+    
+    if (!newName) {
+        alert('请输入分类名称');
+        return;
+    }
+    
+    if (newName !== oldName && customCategories.includes(newName)) {
+        alert('类别已存在');
+        return;
+    }
+    
+    if (newName !== oldName) {
+        const index = customCategories.indexOf(oldName);
+        if (index !== -1) {
+            customCategories[index] = newName;
+            saveCategories();
             
+            // 更新菜谱中的分类
+            ['mom', 'baby'].forEach(u => {
+                (recipes[u] || []).forEach(recipe => {
+                    if (recipe.mainCat === oldName) {
+                        recipe.mainCat = newName;
+                    }
+                });
+            });
+            
+            // 【关键修复】更新子分类数据的键名
+            if (subCategories[oldName]) {
+                subCategories[newName] = subCategories[oldName];
+                delete subCategories[oldName];
+                saveSubCategories();
+            }
+            
+            // 保存分类颜色
+            const savedColors = localStorage.getItem('category_colors');
+            if (savedColors) {
+                const colors = JSON.parse(savedColors);
+                if (colors[oldName]) {
+                    colors[newName] = { bg: newBgColor, text: newTextColor };
+                    delete colors[oldName];
+                    localStorage.setItem('category_colors', JSON.stringify(colors));
+                } else {
+                    const newColors = {};
+                    newColors[newName] = { bg: newBgColor, text: newTextColor };
+                    localStorage.setItem('category_colors', JSON.stringify(newColors));
+                }
+            } else {
+                const newColors = {};
+                newColors[newName] = { bg: newBgColor, text: newTextColor };
+                localStorage.setItem('category_colors', JSON.stringify(newColors));
+            }
+            
+            saveData();
+        }
+    } else {
+        saveCategoryColor(newName, newBgColor, newTextColor);
+    }
+    
+    modal.remove();
+    renderCategoryList();
+    updateSubManageSelect();
+    renderSubcategoryListInModal();
+    
+    const activePage = document.querySelector('.nav-item.active')?.dataset.page;
+    if (activePage === 'recipe') {
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = renderRecipePage();
+        initRecipe();
+        initCategoryEditor();
+    }
+    if (activePage === 'plan') {
+        refreshPlan();
+    }
+};
             modal.querySelector('#cancelEditBtn').onclick = () => modal.remove();
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.remove();
@@ -2817,53 +2838,58 @@ function renderCategoryList() {
     });
     
     // 删除分类（所有分类都可以删除）
-    document.querySelectorAll('.delete-cat-btn').forEach(btn => {
-        btn.onclick = () => {
-            const catName = btn.dataset.cat;
-            
-            if (customCategories.length <= 1) {
-                alert('至少需要保留一个分类，无法删除最后一个分类');
-                return;
-            }
-            
-            if (confirm(`确定删除类别「${catName}」吗？\n该类别下的所有菜谱将被删除！`)) {
-                const index = customCategories.indexOf(catName);
-                if (index !== -1) {
-                    customCategories.splice(index, 1);
-                    saveCategories();
-                    
-                    ['mom', 'baby'].forEach(u => {
-                        recipes[u] = (recipes[u] || []).filter(recipe => recipe.mainCat !== catName);
-                    });
-                    
-                    if (subCategories[catName]) {
-                        delete subCategories[catName];
-                        saveSubCategories();
-                    }
-                    
-                    saveData();
-                    
-                    renderCategoryList();
-                    updateSubManageSelect();
-                    renderSubcategoryListInModal();
-                    
-                    const activePage = document.querySelector('.nav-item.active')?.dataset.page;
-                    if (activePage === 'recipe') {
-                        const mainContent = document.getElementById('mainContent');
-                        if (mainContent) {
-                            mainContent.innerHTML = renderRecipePage();
-                            initRecipe();
-                            initCategoryEditor();
-                        }
-                    }
-                    if (activePage === 'plan') {
-                        refreshPlan();
+
+    // 删除分类
+document.querySelectorAll('.delete-cat-btn').forEach(btn => {
+    btn.onclick = () => {
+        const catName = btn.dataset.cat;
+        
+        if (customCategories.length <= 1) {
+            alert('至少需要保留一个分类，无法删除最后一个分类');
+            return;
+        }
+        
+        if (confirm(`确定删除类别「${catName}」吗？\n该类别下的所有菜谱将被删除！`)) {
+            const index = customCategories.indexOf(catName);
+            if (index !== -1) {
+                customCategories.splice(index, 1);
+                saveCategories();  // ← 确保这里保存了
+                
+                // 删除该分类下的所有菜谱
+                ['mom', 'baby'].forEach(u => {
+                    recipes[u] = (recipes[u] || []).filter(recipe => recipe.mainCat !== catName);
+                });
+                
+                // 删除该分类的子分类数据
+                if (subCategories[catName]) {
+                    delete subCategories[catName];
+                    saveSubCategories();
+                }
+                
+                saveData();
+                
+                // 刷新显示
+                renderCategoryList();
+                updateSubManageSelect();
+                renderSubcategoryListInModal();
+                
+                // 刷新菜谱库页面
+                const activePage = document.querySelector('.nav-item.active')?.dataset.page;
+                if (activePage === 'recipe') {
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) {
+                        mainContent.innerHTML = renderRecipePage();
+                        initRecipe();
+                        initCategoryEditor();
                     }
                 }
+                if (activePage === 'plan') {
+                    refreshPlan();
+                }
             }
-        };
-    });
-    
+        }
+    };
+});
     // 注意：这里不需要额外的闭合括号，函数到此结束
 }
 
