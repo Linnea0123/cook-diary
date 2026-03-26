@@ -645,14 +645,18 @@
         .meal-content.collapsed { display: none; }
 
        /* 分类行 - 缩小间距 */
+/* 分类行 - 允许换行，标签自动缩小 */
 .category-row {
-    margin-bottom: 4px;  /* 从8px改为4px */
+    margin-bottom: 4px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 4px;  /* 从6px改为4px */
+    gap: 6px;
+    justify-content: flex-start;  /* 新增：左对齐 */
+    width: 100%;                  /* 确保占满宽度 */
 }
     /* 分类标题 - 调整大小 */
+/* 分类标题 - 固定位置，不偏移 */
 .category-title {
     font-size: 11px;
     font-weight: 600;
@@ -660,13 +664,16 @@
     padding: 3px 8px;
     border-radius: 16px;
     text-align: center;
-    flex-shrink: 0;
+    flex-shrink: 0;              /* 禁止缩小 */
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 1.2;
     height: auto;
     box-sizing: border-box;
+    white-space: nowrap;
+    /* 确保文字居中 */
+    text-align: center;
 }
        
 /* 改为基础样式，颜色通过行内样式动态设置 */
@@ -2619,6 +2626,7 @@ function renderSubcategoryListInModal() {
 
 
 
+
 function renderCategoryList() {
     const container = document.getElementById('categoryList');
     if (!container) return;
@@ -2808,45 +2816,58 @@ function renderCategoryList() {
         };
     });
     
-    // 删除分类
+    // 删除分类（所有分类都可以删除）
     document.querySelectorAll('.delete-cat-btn').forEach(btn => {
         btn.onclick = () => {
             const catName = btn.dataset.cat;
-            const defaultCats = ['主食', '蔬菜', '肉鱼', '蛋', '油脂', '水果'];
-            if (defaultCats.includes(catName)) {
-                alert('默认分类不能删除');
+            
+            if (customCategories.length <= 1) {
+                alert('至少需要保留一个分类，无法删除最后一个分类');
                 return;
             }
-            if (confirm(`确定删除类别「${catName}」吗？该类别下的菜谱将无法使用`)) {
-    const index = customCategories.indexOf(catName);
-    if (index !== -1) {
-        customCategories.splice(index, 1);
-        saveCategories();
-        
-        // 删除该分类下的所有菜谱
-        ['mom', 'baby'].forEach(u => {
-            recipes[u] = (recipes[u] || []).filter(recipe => recipe.mainCat !== catName);
-        });
+            
+            if (confirm(`确定删除类别「${catName}」吗？\n该类别下的所有菜谱将被删除！`)) {
+                const index = customCategories.indexOf(catName);
+                if (index !== -1) {
+                    customCategories.splice(index, 1);
+                    saveCategories();
+                    
+                    ['mom', 'baby'].forEach(u => {
+                        recipes[u] = (recipes[u] || []).filter(recipe => recipe.mainCat !== catName);
+                    });
+                    
+                    if (subCategories[catName]) {
+                        delete subCategories[catName];
+                        saveSubCategories();
+                    }
                     
                     saveData();
+                    
                     renderCategoryList();
                     updateSubManageSelect();
                     renderSubcategoryListInModal();
                     
-                    const activePage = document.querySelector('.nav-item.active').dataset.page;
+                    const activePage = document.querySelector('.nav-item.active')?.dataset.page;
                     if (activePage === 'recipe') {
                         const mainContent = document.getElementById('mainContent');
-                        mainContent.innerHTML = renderRecipePage();
-                        initRecipe();
-                        initCategoryEditor();
+                        if (mainContent) {
+                            mainContent.innerHTML = renderRecipePage();
+                            initRecipe();
+                            initCategoryEditor();
+                        }
+                    }
+                    if (activePage === 'plan') {
+                        refreshPlan();
                     }
                 }
             }
         };
     });
+    
+    // 注意：这里不需要额外的闭合括号，函数到此结束
 }
 
-// 保存分类颜色
+
 function saveCategoryColor(category, bgColor, textColor) {
     let savedColors = localStorage.getItem('category_colors');
     let colors = savedColors ? JSON.parse(savedColors) : {};
