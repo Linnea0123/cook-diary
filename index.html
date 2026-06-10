@@ -28,10 +28,8 @@
 }
 
 .list-header { 
-    padding: 0.5rem 1rem 0.8rem 1rem;  /* 增加底部内边距 */
     background: white; 
     border-bottom: 1px solid #eee; 
-    text-align: center; 
 }
 
 .week-range { font-size: 0.7rem; color: #666; background: #f5f5f5; padding: 0.2rem 0.8rem; border-radius: 20px; display: inline-block; }
@@ -95,8 +93,9 @@
         .selected-meal-panel { background: #fafafa; margin: 0.5rem; padding: 0.6rem; border-radius: 8px; font-size: 0.7rem; border: 1px solid #eee; }
         .menu-header-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1rem; border-bottom: 1px solid #eee; }
         .menu-title { font-size: 0.95rem; font-weight: 600; color: #444; }
-        .add-menu-btn { background: #2c5e2a; color: white; border: none; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.7rem; cursor: pointer; }
-        .menu-stats-row { display: flex; gap: 1rem; padding: 0.5rem 1rem; background: white; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+
+.add-menu-btn { background: #7ea77e; color: white; border: none; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.7rem; cursor: pointer; }
+
         .menu-toolbar-row { padding: 0.4rem 1rem; background: #fafafa; font-size: 0.65rem; color: #999; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; }
         .delete-row { padding: 0.5rem 1rem; border-bottom: 1px solid #eee; }
         .delete-zero-btn { background: transparent; border: 1px solid #ddd; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.6rem; cursor: pointer; color: #888; }
@@ -500,8 +499,8 @@
 
 .filter-cat.active[data-cat="all"],
 .calendar-filter-cat.active[data-cal-cat="all"] {
-    background: #aaa;
-    color: #000;
+    background: #7ea77e;
+    color: #fff;
 }
 
 
@@ -571,6 +570,65 @@
     vertical-align: top;
 }
 
+/* 菜谱详情弹窗中的分类标签样式 */
+.tag-staple {
+    background: #E5C59E !important;
+    color: #4a3a1a !important;
+}
+
+.tag-veg {
+    background: #B7D5B8 !important;
+    color: #2c4a2a !important;
+}
+
+.tag-protein {
+    background: #C8DEEF !important;
+    color: #1a3a5c !important;
+}
+
+.tag-fat {
+    background: #F4D4D3 !important;
+    color: #8a3a35 !important;
+}
+.menu-stats-row {
+    padding: 0.5rem;
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+.menu-stats-row .filter-cat {
+    flex: 1;
+    text-align: center;
+    font-size: 0.7rem;
+    padding: 4px 0;
+}
+
+/* 选择模式下的复选框样式 - 确保显示 */
+.menu-simple-item.select-mode-item {
+    position: relative;
+}
+
+.menu-simple-item.select-mode-item .menu-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+}
+
+.menu-simple-item.select-mode-item .check-mark {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ddd;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+}
+
+.menu-simple-item.select-mode-item .check-mark.checked {
+    background: #4a7c3f;
+}
    </style>
 </head>
 <body>
@@ -596,10 +654,10 @@
 <main class="main-container">
     <div id="listView" class="view-panel active-view">
         <div class="card">
-<div class="list-header">
-    <button class="week-nav-btn" id="prevWeekBtn">&lt;</button>
-    <span class="week-range" id="weekRangeDisplay">2026/6/8 (一) 〜 6/14 (日)</span>
-    <button class="week-nav-btn" id="nextWeekBtn">&gt;</button>
+<div class="list-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.8rem;">
+    <button class="week-nav-btn" id="prevWeekBtn" style="margin: 0; padding: 0 8px;">&lt;</button>
+    <span class="week-range" id="weekRangeDisplay" style="flex: 1; text-align: center;">2026/6/8 (一) 〜 6/14 (日)</span>
+    <button class="week-nav-btn" id="nextWeekBtn" style="margin: 0; padding: 0 8px;">&gt;</button>
 </div>
             <div class="category-filter-bar">
     <span class="filter-cat active" data-cat="all">全部</span>
@@ -646,12 +704,16 @@
 
 
             <div class="menu-stats-row" id="menuStatsRow">
-                <span class="filter-cat active" data-cat="all">全部(<span id="countAll">0</span>)</span>
-                <span class="filter-cat" data-cat="主食">主食(<span id="countMain">0</span>)</span>
-                <span class="filter-cat" data-cat="蔬菜">蔬菜(<span id="countSide">0</span>)</span>
-                <span class="filter-cat" data-cat="蛋白质">蛋白质(<span id="countSoup">0</span>)</span>
-                <span class="filter-cat" data-cat="油脂">油脂(<span id="countDessert">0</span>)</span>
-            </div>
+    <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+        <span class="filter-cat active" data-cat="all">全部(<span id="countAll">0</span>)</span>
+    </div>
+    <div style="display: flex; justify-content: space-around; gap: 0.5rem;">
+        <span class="filter-cat" data-cat="主食">主食(<span id="countMain">0</span>)</span>
+        <span class="filter-cat" data-cat="蔬菜">蔬菜(<span id="countSide">0</span>)</span>
+        <span class="filter-cat" data-cat="蛋白质">蛋白质(<span id="countSoup">0</span>)</span>
+        <span class="filter-cat" data-cat="油脂">油脂(<span id="countDessert">0</span>)</span>
+    </div>
+</div>
             <div class="menu-toolbar-row"><span>🔽 作った回数が多い順</span><span>🔍 料理名で検索...</span></div>
             <div class="delete-row"><button id="bulkDeleteZeroBtn" class="delete-zero-btn">🗑️ 使用回数0のメニューを一括削除</button></div>
             <div id="menuItemsContainer" class="menu-list-simple"></div>
@@ -720,12 +782,30 @@
         <div class="modal-header">
             <span id="detailRecipeName" style="font-weight:600;">菜谱详情</span>
             <div>
-                <button id="detailEditBtn" style="background:none; border:none; font-size:1rem; cursor:pointer; margin-right:8px; color:#2c5e2a;">✏️ 编辑</button>
+                <button id="detailEditBtn" style="background:none; border:none; font-size:0.7rem; cursor:pointer; margin-right:8px; color:#2c5e2a;">✏️</button>
                 <button class="close-detail-modal" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
             </div>
         </div>
         <div class="modal-body" id="detailBody">
             <!-- 动态内容 -->
+        </div>
+    </div>
+</div>
+
+
+<!-- 图片裁剪弹窗 -->
+<div id="cropModal" class="modal-overlay" style="z-index: 30000;">
+    <div class="modal-container" style="max-width: 90%; width: 400px; background: white; border-radius: 16px;">
+        <div class="modal-header">
+            <span>✂️ 裁剪图片 (正方形)</span>
+            <button class="close-crop-modal" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 16px;">
+            <canvas id="cropCanvas" style="max-width: 100%; max-height: 60vh; border: 2px solid #ddd; border-radius: 8px; cursor: crosshair;"></canvas>
+            <div style="display: flex; justify-content: center; gap: 12px; margin-top: 16px;">
+                <button id="cancelCropBtn" style="background: #f0f0f0; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer;">取消</button>
+                <button id="confirmCropBtn" style="background: #2c5e2a; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer;">确认裁剪</button>
+            </div>
         </div>
     </div>
 </div>
@@ -891,6 +971,227 @@ let currentListFilter = 'all';  // 列表视图的分类筛选
 
 let currentDetailRecipeId = null; // 当前查看的菜谱id
 
+
+// 裁剪相关变量
+let cropImage = null;
+let cropCanvas = null;
+let cropCtx = null;
+let isDragging = false;
+let startX, startY;
+let cropRect = { x: 0, y: 0, w: 0, h: 0 };
+let originalImageWidth = 0;
+let originalImageHeight = 0;
+
+// 初始化裁剪 canvas
+function initCropCanvas() {
+    cropCanvas = document.getElementById('cropCanvas');
+    if (!cropCanvas) return;
+    cropCtx = cropCanvas.getContext('2d');
+    
+    // 鼠标事件
+    cropCanvas.addEventListener('mousedown', startCrop);
+    cropCanvas.addEventListener('mousemove', drawCrop);
+    cropCanvas.addEventListener('mouseup', endCrop);
+    cropCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startCrop(e); });
+    cropCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawCrop(e); });
+    cropCanvas.addEventListener('touchend', endCrop);
+}
+
+function startCrop(e) {
+    isDragging = true;
+    const pos = getCanvasCoordinates(e);
+    startX = pos.x;
+    startY = pos.y;
+    cropRect = { x: startX, y: startY, w: 0, h: 0 };
+}
+
+function drawCrop(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const pos = getCanvasCoordinates(e);
+    let currentX = pos.x;
+    let currentY = pos.y;
+    
+    // 计算正方形区域（以较大的边为准）
+    let width = currentX - startX;
+    let height = currentY - startY;
+    let size = Math.max(Math.abs(width), Math.abs(height));
+    if (currentX < startX) size = -size;
+    if (currentY < startY) size = -Math.abs(size);
+    
+    cropRect = {
+        x: startX,
+        y: startY,
+        w: size,
+        h: size
+    };
+    
+    // 边界限制
+    if (cropRect.x < 0) cropRect.x = 0;
+    if (cropRect.y < 0) cropRect.y = 0;
+    if (cropRect.x + cropRect.w > cropCanvas.width) cropRect.w = cropCanvas.width - cropRect.x;
+    if (cropRect.y + cropRect.h > cropCanvas.height) cropRect.h = cropCanvas.height - cropRect.y;
+    
+    redrawCanvas();
+}
+
+function endCrop() {
+    isDragging = false;
+    redrawCanvas();
+}
+
+function getCanvasCoordinates(e) {
+    const rect = cropCanvas.getBoundingClientRect();
+    const scaleX = cropCanvas.width / rect.width;
+    const scaleY = cropCanvas.height / rect.height;
+    
+    let clientX, clientY;
+    if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    
+    let x = (clientX - rect.left) * scaleX;
+    let y = (clientY - rect.top) * scaleY;
+    x = Math.max(0, Math.min(cropCanvas.width, x));
+    y = Math.max(0, Math.min(cropCanvas.height, y));
+    return { x, y };
+}
+
+function redrawCanvas() {
+    if (!cropImage || !cropCtx) return;
+    
+    // 清空并重绘原图
+    cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+    cropCtx.drawImage(cropImage, 0, 0, cropCanvas.width, cropCanvas.height);
+    
+    // 绘制裁剪框
+    if (cropRect.w !== 0 && cropRect.h !== 0) {
+        cropCtx.save();
+        cropCtx.strokeStyle = '#2c5e2a';
+        cropCtx.lineWidth = 3;
+        cropCtx.setLineDash([8, 8]);
+        cropCtx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        
+        // 添加半透明遮罩
+        cropCtx.fillStyle = 'rgba(0,0,0,0.5)';
+        cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+        cropCtx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        cropCtx.drawImage(cropImage, 0, 0, cropCanvas.width, cropCanvas.height, 
+            cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        cropCtx.restore();
+        
+        // 重新绘制裁剪框边框
+        cropCtx.save();
+        cropCtx.strokeStyle = '#fff';
+        cropCtx.lineWidth = 2;
+        cropCtx.setLineDash([8, 8]);
+        cropCtx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        cropCtx.restore();
+    }
+}
+
+// 执行裁剪并返回裁剪后的图片文件
+async function cropAndGetImage() {
+    return new Promise((resolve, reject) => {
+        if (!cropImage || cropRect.w <= 0 || cropRect.h <= 0) {
+            reject(new Error('请先选择裁剪区域'));
+            return;
+        }
+        
+        // 创建临时 canvas 进行裁剪
+        const tempCanvas = document.createElement('canvas');
+        const targetSize = Math.min(cropRect.w, cropRect.h);
+        tempCanvas.width = targetSize;
+        tempCanvas.height = targetSize;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // 计算裁剪区域在原始图片中的比例
+        const scaleX = originalImageWidth / cropCanvas.width;
+        const scaleY = originalImageHeight / cropCanvas.height;
+        
+        const sx = cropRect.x * scaleX;
+        const sy = cropRect.y * scaleY;
+        const sWidth = cropRect.w * scaleX;
+        const sHeight = cropRect.h * scaleY;
+        
+        tempCtx.drawImage(cropImage, sx, sy, sWidth, sHeight, 0, 0, targetSize, targetSize);
+        
+        // 转换为 File
+        tempCanvas.toBlob((blob) => {
+            const file = new File([blob], 'cropped_image.jpg', { type: 'image/jpeg' });
+            resolve(file);
+        }, 'image/jpeg', 0.9);
+    });
+}
+
+// 打开裁剪弹窗
+function openCropModal(imageFile) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            cropImage = img;
+            originalImageWidth = img.width;
+            originalImageHeight = img.height;
+            
+            // 设置 canvas 尺寸（限制最大 500px）
+            const maxSize = 500;
+            let canvasWidth = img.width;
+            let canvasHeight = img.height;
+            if (canvasWidth > maxSize || canvasHeight > maxSize) {
+                const ratio = Math.min(maxSize / canvasWidth, maxSize / canvasHeight);
+                canvasWidth = canvasWidth * ratio;
+                canvasHeight = canvasHeight * ratio;
+            }
+            
+            cropCanvas.width = canvasWidth;
+            cropCanvas.height = canvasHeight;
+            
+            // 重置裁剪区域
+            cropRect = { x: 0, y: 0, w: canvasWidth, h: canvasHeight };
+            redrawCanvas();
+            
+            // 显示弹窗
+            const modal = document.getElementById('cropModal');
+            modal.style.display = 'flex';
+            
+            // 确认裁剪
+            const confirmBtn = document.getElementById('confirmCropBtn');
+            const cancelBtn = document.getElementById('cancelCropBtn');
+            const closeBtn = document.querySelector('.close-crop-modal');
+            
+            const cleanup = () => {
+                modal.style.display = 'none';
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cleanup);
+                closeBtn.removeEventListener('click', cleanup);
+            };
+            
+            const confirmHandler = async () => {
+                try {
+                    const croppedFile = await cropAndGetImage();
+                    cleanup();
+                    resolve(croppedFile);
+                } catch(err) {
+                    reject(err);
+                    cleanup();
+                }
+            };
+            
+            confirmBtn.addEventListener('click', confirmHandler);
+            cancelBtn.addEventListener('click', cleanup);
+            closeBtn.addEventListener('click', cleanup);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(imageFile);
+    });
+}
+
+
+
 function showRecipeDetail(recipeName) {
     const recipe = menuItemsList.find(r => r.name === recipeName);
     if (!recipe) return;
@@ -898,12 +1199,7 @@ function showRecipeDetail(recipeName) {
     
     const detailBody = document.getElementById('detailBody');
     const hasImage = recipe.localImage || recipe.image;
-    const imageHtml = hasImage 
 
-? `<div style="margin-bottom:12px;"><img src="${hasImage}?t=${Date.now()}" style="max-width:100%; max-height:150px; border-radius:8px; object-fit:cover;"></div>`
-
-    : `<div style="margin-bottom:12px; background:#f5f5f5; padding:20px; text-align:center; border-radius:8px; color:#aaa;">暂无图片</div>`;
-    
     // 评价显示
     let ratingText = recipe.rating || '未评价';
     let ratingEmoji = '';
@@ -911,16 +1207,48 @@ function showRecipeDetail(recipeName) {
     else if (ratingText === '一般') ratingEmoji = '🤔 ';
     else if (ratingText === '不好吃') ratingEmoji = '😕 ';
     
-    detailBody.innerHTML = `
-        ${imageHtml}
-        <div style="margin-bottom:8px;"><span style="color:#888;">分类</span> <span style="background:#f0f0f0; padding:2px 10px; border-radius:20px; font-size:0.7rem;">${recipe.category}</span></div>
-        <div style="margin-bottom:8px;"><span style="color:#888;">食谱链接</span> ${recipe.recipeUrl ? `<a href="${recipe.recipeUrl}" target="_blank" style="color:#2c5e2a; font-size:0.7rem;">点击查看</a>` : '<span style="color:#ccc;">无</span>'}</div>
-        <div style="margin-bottom:8px;"><span style="color:#888;">评价</span> <span>${ratingEmoji}${ratingText}</span></div>
-        <div style="margin-bottom:8px;"><span style="color:#888;">做法</span></div>
-        <div style="background:#fafafa; padding:10px; border-radius:8px; font-size:0.75rem; white-space:pre-wrap;">${escapeHtml(recipe.method || '未填写做法')}</div>
-        <div style="margin-top:10px; font-size:0.65rem; color:#aaa;">使用次数: ${recipe.timesUsed || 0} 次</div>
+    // 获取分类对应的标签样式
+const categoryClass = {
+    '主食': 'tag-staple',
+    '蔬菜': 'tag-veg', 
+    '蛋白质': 'tag-protein',
+    '油脂': 'tag-fat'
+}[recipe.category] || '';
+
+// 图片HTML（正方形居中，两侧白色背景）
+let imageHtml = '';
+if (hasImage) {
+    imageHtml = `
+        <div style="background:#fff; display:flex; justify-content:center; align-items:center; margin-bottom:16px;">
+            <div style="width:100%; max-width:280px; aspect-ratio:1/1; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:12px;">
+                <img src="${hasImage}?t=${Date.now()}" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+        </div>
     `;
-    
+} else {
+    imageHtml = `<div style="background:#f5f5f5; margin-bottom:16px; padding:40px; text-align:center; border-radius:12px; color:#aaa;">暂无图片</div>`;
+}
+
+// 分类标签（只显示标签本身，带颜色）
+const categoryTagHtml = `<span class="${categoryClass}" style="display:inline-block; padding:4px 14px; border-radius:20px; font-size:0.7rem; font-weight:500;">${recipe.category}</span>`;
+
+// 食谱链接（没有则不显示这一行）
+const linkHtml = recipe.recipeUrl ? `
+    <div style="margin-bottom:12px;">
+        <a href="${recipe.recipeUrl}" target="_blank" style="color:#2c5e2a; font-size:0.65rem; text-decoration:none;">🔗 食谱链接</a>
+    </div>
+` : '';
+
+detailBody.innerHTML = `
+    ${imageHtml}
+    <div style="text-align:left; margin-bottom:16px;">
+        ${categoryTagHtml}
+    </div>
+    ${linkHtml}
+    <div style="margin-bottom:6px;"><span style="color:#888; font-size:0.65rem;">做法</span></div>
+    <div style="background:#fafafa; padding:12px; border-radius:10px; font-size:0.7rem; line-height:1.5; white-space:pre-wrap;">${escapeHtml(recipe.method || '未填写做法')}</div>
+    <div style="margin-top:14px; font-size:0.6rem; color:#aaa; text-align:center;">使用次数: ${recipe.timesUsed || 0} 次</div>
+`;
     document.getElementById('recipeDetailModal').style.display = 'flex';
 }
 // 打开编辑弹窗（从详情页点击编辑按钮调用）
@@ -969,10 +1297,9 @@ previewDiv.innerHTML = `<img src="${urlWithTimestamp}" style="width:100%; height
     window._tempEditImageDataUrl = imageSrc || null;
     document.getElementById('recipeEditModalV2').style.display = 'flex';
 }
-function saveEditedRecipe() {
+async function saveEditedRecipe() {
     console.log('=== saveEditedRecipe 被调用 ===');
-    console.log('window._tempEditImageDataUrl 当前值:', window._tempEditImageDataUrl);
-
+    
     const newName = document.getElementById('editRecipeName').value.trim();
     if (!newName) {
         alert('请输入菜谱名');
@@ -1003,14 +1330,23 @@ function saveEditedRecipe() {
             registered: new Date().toISOString().slice(0,10)
         };
         
-        // 处理图片 - 修复：使用 newRecipe
+        // 等待图片上传完成（如果有的话）
         if (window._tempEditImageDataUrl && window._tempEditImageDataUrl !== '') {
             newRecipe.localImage = window._tempEditImageDataUrl;
             console.log('新增菜谱保存图片:', window._tempEditImageDataUrl);
-            // 保存缩略图
             if (window._tempEditThumbnailDataUrl) {
                 newRecipe.localThumbnail = window._tempEditThumbnailDataUrl;
-                console.log('新增菜谱保存缩略图');
+            }
+        } else if (window._pendingImagePromise) {
+            // 如果图片还在上传中，等待上传完成
+            console.log('等待图片上传完成...');
+            const imageUrl = await window._pendingImagePromise;
+            if (imageUrl) {
+                newRecipe.localImage = imageUrl;
+                console.log('图片上传完成，已保存:', imageUrl);
+            }
+            if (window._tempEditThumbnailDataUrl) {
+                newRecipe.localThumbnail = window._tempEditThumbnailDataUrl;
             }
         }
         
@@ -1027,19 +1363,32 @@ function saveEditedRecipe() {
         recipe.recipeUrl = newUrl;
         recipe.rating = newRating;
         
-        // 处理图片 - 编辑模式
+        // 等待图片上传完成
         if (window._tempEditImageDataUrl && window._tempEditImageDataUrl !== '') {
             recipe.localImage = window._tempEditImageDataUrl;
             console.log('编辑菜谱保存图片:', window._tempEditImageDataUrl);
-            // 保存缩略图
             if (window._tempEditThumbnailDataUrl) {
                 recipe.localThumbnail = window._tempEditThumbnailDataUrl;
-                console.log('编辑菜谱保存缩略图');
+            }
+        } else if (window._pendingImagePromise) {
+            console.log('等待图片上传完成...');
+            const imageUrl = await window._pendingImagePromise;
+            if (imageUrl) {
+                recipe.localImage = imageUrl;
+                console.log('图片上传完成，已保存:', imageUrl);
+            }
+            if (window._tempEditThumbnailDataUrl) {
+                recipe.localThumbnail = window._tempEditThumbnailDataUrl;
             }
         }
         
         alert('保存成功');
     }
+    
+    // 清除临时数据
+    window._pendingImagePromise = null;
+    window._tempEditImageDataUrl = null;
+    window._tempEditThumbnailDataUrl = null;
     
     // 保存到 localStorage
     saveDataToLocal();
@@ -1052,32 +1401,49 @@ function saveEditedRecipe() {
     // 关闭编辑弹窗
     document.getElementById('recipeEditModalV2').style.display = 'none';
 }
+
+
 // 处理本地图片上传（支持 GitHub 云端存储，带压缩）
 // 在上传成功后，同时生成缩略图
 async function handleLocalImageUpload(file, previewElement, onDataUrl, onThumbnail) {
     if (!file) return;
     
-    // 生成缩略图（立即显示）
-    const thumbnail = await compressImage(file, 200, 200, 0.5);
-    const thumbnailReader = new FileReader();
-    thumbnailReader.onload = function(e) {
-        previewElement.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-        if (onThumbnail) onThumbnail(e.target.result);
-    };
-    thumbnailReader.readAsDataURL(thumbnail);
-    
-    // 上传原图到 GitHub（后台进行）
-    if (isGithubConfigured()) {
+    // 创建一个 Promise 来追踪图片上传
+    window._pendingImagePromise = new Promise(async (resolve, reject) => {
         try {
-            const compressedFile = await compressImage(file, 800, 800, 0.7);
-            const imageUrl = await uploadImageToGitHub(compressedFile);
-            if (onDataUrl) onDataUrl(imageUrl);
+            // 生成缩略图（立即显示）
+            const thumbnail = await compressImage(file, 200, 200, 0.5);
+            const thumbnailReader = new FileReader();
+            thumbnailReader.onload = function(e) {
+                previewElement.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                if (onThumbnail) onThumbnail(e.target.result);
+            };
+            thumbnailReader.readAsDataURL(thumbnail);
+            
+            // 上传原图到 GitHub
+            if (isGithubConfigured()) {
+                const compressedFile = await compressImage(file, 800, 800, 0.7);
+                const imageUrl = await uploadImageToGitHub(compressedFile);
+                console.log('图片上传成功，CDN 链接:', imageUrl);
+                if (onDataUrl) onDataUrl(imageUrl);
+                resolve(imageUrl);
+            } else {
+                // 没有配置 GitHub，使用 base64
+                const compressedFile = await compressImage(file, 800, 800, 0.7);
+                const base64Reader = new FileReader();
+                base64Reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    if (onDataUrl) onDataUrl(base64);
+                    resolve(base64);
+                };
+                base64Reader.readAsDataURL(compressedFile);
+            }
         } catch(error) {
-            console.error('上传失败:', error);
+            console.error('图片处理失败:', error);
+            reject(error);
         }
-    }
+    });
 }
-
 // 压缩图片
 async function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
     return new Promise((resolve, reject) => {
@@ -1752,72 +2118,97 @@ function renderMenuManagement() {
     let html = '';
     filtered.forEach(item => { 
         const isChecked = isSelectMode && selectedRecipeIds.includes(String(item.id));
-        // 获取缩略图（优先使用 localThumbnail，其次 localImage，最后 image）
-// 获取缩略图
-
-// 获取缩略图
-let thumbnailSrc = '';
-if (item.localThumbnail) {
-    thumbnailSrc = item.localThumbnail;
-} else if (item.localImage) {
-    thumbnailSrc = item.localImage;
-} else if (item.image) {
-    thumbnailSrc = item.image;
-}
-
-// 处理前回显示
-let lastCookText = item.lastCook || 'なし';
-// 如果 lastCook 是日期格式，可以格式化显示
-if (item.lastCook && item.lastCook !== 'なし' && item.lastCook !== '今日') {
-    // 可以保持原样或格式化
-}
-
-html += `
-    <div class="menu-simple-item ${isSelectMode ? 'select-mode-item' : ''}" data-id="${item.id}" data-name="${escapeHtml(item.name)}" style="position: relative; display: flex; flex-direction: column; padding: 12px;">
-        ${isSelectMode ? `<div class="menu-checkbox"><div class="check-mark ${isChecked ? 'checked' : ''}">${isChecked ? '✓' : ''}</div></div>` : ''}
-        ${thumbnailSrc ? `<div style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #f5f5f5;"><img src="${thumbnailSrc}" style="width: 100%; height: 100%; object-fit: cover;"></div>` : `<div style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border-radius: 8px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 9px;">无图</div>`}
-        <div style="padding-right: 48px;">
-            <div class="menu-simple-name">${escapeHtml(item.name)}</div>
-            <div class="menu-simple-category">${item.category}</div>
-      <div class="menu-simple-detail" style="margin-top: 4px; white-space: nowrap;">
-    前回: ${escapeHtml(lastCookText)} ｜ 回数: ${item.timesUsed || 0}回
-</div>
-        </div>
-        ${!isSelectMode ? `<button class="edit-menu-btn" data-id="${item.id}" style="align-self: flex-end; margin-top: 8px;">✏️</button>` : ''}
-    </div>
-`;
-  
-
-});
+        
+        let thumbnailSrc = '';
+        if (item.localThumbnail) {
+            thumbnailSrc = item.localThumbnail;
+        } else if (item.localImage) {
+            thumbnailSrc = item.localImage;
+        } else if (item.image) {
+            thumbnailSrc = item.image;
+        }
+        
+        let lastCookText = item.lastCook || 'なし';
+        
+        html += '<div class="menu-simple-item ' + (isSelectMode ? 'select-mode-item' : '') + '" data-id="' + item.id + '" data-name="' + escapeHtml(item.name) + '" style="position: relative; display: flex; flex-direction: column; padding: 12px; cursor: pointer;">';
+        
+        if (isSelectMode) {
+            html += '<div class="menu-checkbox"><div class="check-mark ' + (isChecked ? 'checked' : '') + '">' + (isChecked ? '✓' : '') + '</div></div>';
+        }
+        
+        if (thumbnailSrc) {
+            html += '<div style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #f5f5f5;"><img src="' + thumbnailSrc + '" style="width: 100%; height: 100%; object-fit: cover;"></div>';
+        } else {
+            html += '<div style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border-radius: 8px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 9px;">无图</div>';
+        }
+        
+        html += '<div style="padding-right: 48px;">';
+        html += '<div class="menu-simple-name">' + escapeHtml(item.name) + '</div>';
+        html += '<div class="menu-simple-category">' + item.category + '</div>';
+        html += '<div class="menu-simple-detail" style="margin-top: 4px; white-space: nowrap;">前回: ' + escapeHtml(lastCookText) + ' ｜ 回数: ' + (item.timesUsed || 0) + '回</div>';
+        html += '</div>';
+        
+        if (!isSelectMode) {
+            html += '<button class="edit-menu-btn" data-id="' + item.id + '" style="align-self: flex-end; margin-top: 8px;">✏️</button>';
+        }
+        
+        html += '</div>';
+    });
     container.innerHTML = html;
     
+    // 移除旧的事件监听器（避免重复）
+    if (container._oldClickHandler) {
+        container.removeEventListener('click', container._oldClickHandler);
+    }
+    
     if (isSelectMode) {
-        // 选择模式：绑定点击选中/取消
-        document.querySelectorAll('#menuItemsContainer .select-mode-item').forEach(item => {
-            item.addEventListener('click', (e) => {
+        // 选择模式：在父容器上绑定事件委托
+        container._oldClickHandler = function(e) {
+            // 向上查找 .menu-simple-item
+            let target = e.target;
+            let menuItem = null;
+            while (target && target !== container) {
+                if (target.classList && target.classList.contains('menu-simple-item')) {
+                    menuItem = target;
+                    break;
+                }
+                target = target.parentElement;
+            }
+            
+            if (menuItem) {
                 e.stopPropagation();
-                const id = String(item.dataset.id);  // 改为字符串
-const checkMark = item.querySelector('.check-mark');
-if (selectedRecipeIds.includes(id)) {
-    selectedRecipeIds = selectedRecipeIds.filter(i => i !== id);
-    checkMark.classList.remove('checked');
-    checkMark.innerHTML = '';
-} else {
-    selectedRecipeIds.push(id);
-    checkMark.classList.add('checked');
-    checkMark.innerHTML = '✓';
-}
-
-            });
-        });
+                const id = String(menuItem.dataset.id);
+                const checkMark = menuItem.querySelector('.check-mark');
+                
+                if (selectedRecipeIds.includes(id)) {
+                    selectedRecipeIds = selectedRecipeIds.filter(i => i !== id);
+                    if (checkMark) {
+                        checkMark.classList.remove('checked');
+                        checkMark.innerHTML = '';
+                    }
+                } else {
+                    selectedRecipeIds.push(id);
+                    if (checkMark) {
+                        checkMark.classList.add('checked');
+                        checkMark.innerHTML = '✓';
+                    }
+                }
+            }
+        };
+        container.addEventListener('click', container._oldClickHandler);
     } else {
         // 普通模式：绑定编辑按钮
-        document.querySelectorAll('.edit-menu-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id'))));
+        document.querySelectorAll('.edit-menu-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openEditModal(btn.getAttribute('data-id'));
+            });
+        });
     }
 }
 
 
-    function openEditModal(id) {
+function openEditModal(id) {
     const item = menuItemsList.find(i => i.id == id);
     if (!item) return;
     currentDetailRecipeId = id;
@@ -2189,21 +2580,37 @@ document.querySelectorAll('.cat-tag').forEach(tag => {
     });
 });
 
-document.getElementById('editRecipeImageFile')?.addEventListener('change', (e) => {
+document.getElementById('editRecipeImageFile')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
-    if (file) {
-        console.log('文件已选择，开始处理...');
-        handleLocalImageUpload(file, document.getElementById('editImagePreview'), 
+    if (!file) return;
+    
+    console.log('文件已选择，打开裁剪工具...');
+    
+    try {
+        // 打开裁剪弹窗
+        initCropCanvas();
+        const croppedFile = await openCropModal(file);
+        
+        console.log('裁剪完成，开始上传...');
+        
+        // 清空之前的 Promise
+        window._pendingImagePromise = null;
+        window._tempEditImageDataUrl = null;
+        
+        // 上传裁剪后的图片
+        await handleLocalImageUpload(croppedFile, document.getElementById('editImagePreview'), 
             (dataUrl) => { 
                 console.log('CDN回调接收到的URL:', dataUrl);
                 window._tempEditImageDataUrl = dataUrl; 
-                console.log('已设置 window._tempEditImageDataUrl =', window._tempEditImageDataUrl);
             },
             (thumbnail) => { 
-                console.log('缩略图回调接收到的长度:', thumbnail ? thumbnail.length : 0);
                 window._tempEditThumbnailDataUrl = thumbnail; 
             }
         );
+    } catch(err) {
+        console.error('裁剪取消或失败:', err);
+        // 如果取消裁剪，清空文件选择
+        e.target.value = '';
     }
 });
 
