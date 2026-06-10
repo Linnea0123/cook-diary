@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>食谱计划 | 饮食管理</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif; }
@@ -1469,12 +1469,6 @@ function closeRecordModal() {
 function saveRecord() {
     if (!currentRecordDate) return;
     
-    // 先获取旧数据，用于对比哪些菜谱被新增了
-    const oldRecord = MEAL_DATA[currentRecordDate] || {};
-    const oldBreakfast = oldRecord.breakfast || [];
-    const oldLunch = oldRecord.lunch || [];
-    const oldDinner = oldRecord.dinner || [];
-    
     // 从界面收集菜谱数据
     const getItemsFromList = (containerId) => {
         const container = document.getElementById(containerId);
@@ -1490,35 +1484,26 @@ function saveRecord() {
     const lunch = getItemsFromList('recordLunchList');
     const dinner = getItemsFromList('recordDinnerList');
     
-    // 找出新增的菜谱（旧数据中没有的）
-    const newBreakfast = breakfast.filter(item => !oldBreakfast.includes(item));
-    const newLunch = lunch.filter(item => !oldLunch.includes(item));
-    const newDinner = dinner.filter(item => !oldDinner.includes(item));
-    const allNewRecipes = [...newBreakfast, ...newLunch, ...newDinner];
-    
-    // 更新菜谱的使用次数和最后使用日期
-    allNewRecipes.forEach(recipeName => {
-        const recipe = menuItemsList.find(r => r.name === recipeName);
-        if (recipe) {
-            recipe.timesUsed = (recipe.timesUsed || 0) + 1;
-            recipe.lastCook = currentRecordDate;
-        }
-    });
-    
     const record = {};
     if (breakfast.length > 0) record.breakfast = breakfast;
     if (lunch.length > 0) record.lunch = lunch;
     if (dinner.length > 0) record.dinner = dinner;
     
-    if (Object.keys(record).length > 0) MEAL_DATA[currentRecordDate] = record;
-    else delete MEAL_DATA[currentRecordDate];
+    if (Object.keys(record).length > 0) {
+        MEAL_DATA[currentRecordDate] = record;
+    } else {
+        delete MEAL_DATA[currentRecordDate];
+    }
+    
+    // ========== 关键修改：重新计算所有菜谱的使用次数 ==========
+    recalculateAllUsageCounts();
+    // =====================================================
     
     renderWeeklyList();
     renderCalendar();
-    renderMenuManagement();  // 刷新菜单管理界面，显示更新后的次数
+    renderMenuManagement();
     saveDataToLocal();
 }
-
 let currentSelectedRecipes = [];
 
 let pendingMealType = null;
@@ -1559,17 +1544,21 @@ function openSelectFood(mealType) {
         const confirmBtn = menuHeaderRow.querySelector('.confirm-select-btn');
         if (confirmBtn) {
             confirmBtn.onclick = () => {
-                const selectedNames = menuItemsList.filter(item => selectedRecipeIds.includes(String(item.id))).map(item => item.name);
-                const mealKey = pendingMealType === '朝食' ? 'breakfast' : (pendingMealType === '昼食' ? 'lunch' : 'dinner');
-                if (!MEAL_DATA[currentRecordDate]) MEAL_DATA[currentRecordDate] = {};
-                MEAL_DATA[currentRecordDate][mealKey] = selectedNames;
-                saveDataToLocal();
-                exitSelectMode();
-                renderWeeklyList();
-                renderCalendar();
-                document.getElementById('recordModal').style.display = 'flex';
-                loadRecordData(currentRecordDate);
-            };
+    const selectedNames = menuItemsList.filter(item => selectedRecipeIds.includes(String(item.id))).map(item => item.name);
+    const mealKey = pendingMealType === '朝食' ? 'breakfast' : (pendingMealType === '昼食' ? 'lunch' : 'dinner');
+    if (!MEAL_DATA[currentRecordDate]) MEAL_DATA[currentRecordDate] = {};
+    MEAL_DATA[currentRecordDate][mealKey] = selectedNames;
+    
+    // 重新计算使用次数
+    recalculateAllUsageCounts();
+    
+    saveDataToLocal();
+    exitSelectMode();
+    renderWeeklyList();
+    renderCalendar();
+    document.getElementById('recordModal').style.display = 'flex';
+    loadRecordData(currentRecordDate);
+};
         }
         
         // 绑定取消按钮
@@ -1670,7 +1659,7 @@ function updateMealListDisplay() {
     let filteredBreakfast = filterByCategory(breakfastItems);
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
-    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">🌅 早餐</span>`;
+    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">早餐</span>`;
     html += `<button class="edit-breakfast-btn" data-date="${dateStr}" data-meal="breakfast" style="background: none; border: none; font-size: 0.7rem; color: #4a7c3f; cursor: pointer;">✏️ 编辑</button>`;
     html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
@@ -1689,7 +1678,7 @@ function updateMealListDisplay() {
     let filteredLunch = filterByCategory(lunchItems);
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
-    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">☀️ 午餐</span>`;
+    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">午餐</span>`;
     html += `<button class="edit-lunch-btn" data-date="${dateStr}" data-meal="lunch" style="background: none; border: none; font-size: 0.7rem; color: #4a7c3f; cursor: pointer;">✏️ 编辑</button>`;
     html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
@@ -1708,7 +1697,7 @@ function updateMealListDisplay() {
     let filteredDinner = filterByCategory(dinnerItems);
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
-    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">🌙 晚餐</span>`;
+    html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">晚餐</span>`;
     html += `<button class="edit-dinner-btn" data-date="${dateStr}" data-meal="dinner" style="background: none; border: none; font-size: 0.7rem; color: #4a7c3f; cursor: pointer;">✏️ 编辑</button>`;
     html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
@@ -1937,9 +1926,74 @@ function openAddModal() {
    
 
 
+    function deleteZeroMenus() { 
+    // 找出使用次数为0的菜谱名称（将要被删除的）
+    const zeroUsageNames = menuItemsList.filter(m => m.timesUsed === 0).map(m => m.name);
     
+    if (zeroUsageNames.length === 0) {
+        alert('使用回数0のメニューはありません');
+        return;
+    }
     
-    function deleteZeroMenus(){ const before = menuItemsList.length; menuItemsList = menuItemsList.filter(m => m.timesUsed > 0); if(before === menuItemsList.length) alert('使用回数0のメニューはありません'); else alert(`${before - menuItemsList.length}件削除しました`); renderMenuManagement(); }
+    const before = menuItemsList.length;
+    
+    // 从菜单列表中删除使用次数为0的菜谱
+    menuItemsList = menuItemsList.filter(m => m.timesUsed > 0);
+    
+    // ========== 同步清理 MEAL_DATA 中的记录 ==========
+    for (const dateStr in MEAL_DATA) {
+        const record = MEAL_DATA[dateStr];
+        let hasChange = false;
+        
+        // 清理早餐
+        if (record.breakfast) {
+            const filtered = record.breakfast.filter(food => !zeroUsageNames.includes(food));
+            if (filtered.length !== record.breakfast.length) {
+                record.breakfast = filtered;
+                hasChange = true;
+            }
+            if (record.breakfast.length === 0) delete record.breakfast;
+        }
+        
+        // 清理午餐
+        if (record.lunch) {
+            const filtered = record.lunch.filter(food => !zeroUsageNames.includes(food));
+            if (filtered.length !== record.lunch.length) {
+                record.lunch = filtered;
+                hasChange = true;
+            }
+            if (record.lunch.length === 0) delete record.lunch;
+        }
+        
+        // 清理晚餐
+        if (record.dinner) {
+            const filtered = record.dinner.filter(food => !zeroUsageNames.includes(food));
+            if (filtered.length !== record.dinner.length) {
+                record.dinner = filtered;
+                hasChange = true;
+            }
+            if (record.dinner.length === 0) delete record.dinner;
+        }
+        
+        // 如果该日期所有餐次都为空，删除整个日期的记录
+        if (hasChange && Object.keys(record).length === 0) {
+            delete MEAL_DATA[dateStr];
+        }
+    }
+    // ========== 清理结束 ==========
+    
+    // 重新计算使用次数（确保数据一致）
+    recalculateAllUsageCounts();
+    
+    saveDataToLocal();
+    renderWeeklyList();
+    renderCalendar();
+    renderMenuManagement();
+    
+    alert(`${before - menuItemsList.length}件削除しました（食事記録からも消去されました）`);
+}
+    
+
 
 function bindCategoryFilters() { 
     // 菜单管理分类筛选
@@ -2202,6 +2256,49 @@ function saveDataToLocal() {
     };
     localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
 }
+
+
+// ✅ 在这里添加新函数（放在这两个函数之间或旁边都可以）
+function recalculateAllUsageCounts() {
+    // 先重置所有菜谱的使用次数为 0
+    menuItemsList.forEach(recipe => {
+        recipe.timesUsed = 0;
+        recipe.lastCook = null;
+    });
+    
+    // 遍历所有日期的记录，统计每个菜谱出现的次数和最后使用日期
+    for (const dateStr in MEAL_DATA) {
+        const record = MEAL_DATA[dateStr];
+        const meals = [record.breakfast, record.lunch, record.dinner];
+        
+        meals.forEach(mealItems => {
+            if (mealItems && Array.isArray(mealItems)) {
+                mealItems.forEach(recipeName => {
+                    const recipe = menuItemsList.find(r => r.name === recipeName);
+                    if (recipe) {
+                        recipe.timesUsed = (recipe.timesUsed || 0) + 1;
+                        // 更新最后使用日期（取最近的日期）
+                        if (!recipe.lastCook || dateStr > recipe.lastCook) {
+                            recipe.lastCook = dateStr;
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    // 对于从未使用过的菜谱，设置默认值
+    menuItemsList.forEach(recipe => {
+        if (!recipe.lastCook) {
+            recipe.lastCook = 'なし';
+        }
+        if (!recipe.timesUsed) {
+            recipe.timesUsed = 0;
+        }
+    });
+}
+
+
 function loadDataFromLocal() {
     const raw = localStorage.getItem(PAGE_ID);
     if (!raw) return false;
