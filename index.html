@@ -631,6 +631,27 @@
 .menu-simple-item.select-mode-item .check-mark.checked {
     background: #4a7c3f;
 }
+
+/* 静默同步提示 */
+.sync-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    z-index: 20000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.sync-toast.show {
+    opacity: 1;
+}
+
    </style>
 </head>
 <body>
@@ -987,6 +1008,10 @@ let currentDetailRecipeId = null; // 当前查看的菜谱id
 
 
 let cropper = null;
+
+
+
+
 
 function openCropModal(imageFile) {
     return new Promise((resolve, reject) => {
@@ -2752,8 +2777,13 @@ function saveDataToLocal() {
         nextId: nextId
     };
     localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
+    
+    // ========== 新增：自动静默同步（防抖）==========
+    if (window._syncTimer) clearTimeout(window._syncTimer);
+    window._syncTimer = setTimeout(() => {
+        silentSyncToGist();
+    }, 2000);  // 用户停止操作2秒后自动同步
 }
-
 
 // ✅ 在这里添加新函数（放在这两个函数之间或旁边都可以）
 function recalculateAllUsageCounts() {
@@ -2956,6 +2986,135 @@ async function restoreFromGist() {
 }
 
 
+// 静默同步（不弹窗，只在右下角短暂显示提示）
+let syncTimeout = null;
+
+function showSyncToast(message, isError = false) {
+    let toast = document.querySelector('.sync-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'sync-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.background = isError ? 'rgba(198, 40, 40, 0.8)' : 'rgba(0,0,0,0.6)';
+    toast.classList.add('show');
+    
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 1500);
+}
+
+
+// 防抖函数
+function debounce(func, delay) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+// 实际的同步函数（不防抖）
+async function _silentSyncToGist() {
+    const { token, gistId, filename } = loadGithubConfig();
+    if (!token || !gistId) {
+        console.log('⚠️ 静默同步跳过：未配置 Gist');
+        return false;
+    }
+    
+    const exportData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        mealData: MEAL_DATA,
+        menuItems: menuItemsList,
+        nextId: nextId
+    };
+    const content = JSON.stringify(exportData, null, 2);
+    
+    try {
+        // 先获取当前 Gist 的 sha（用于更新）
+        let sha = '';
+        const getRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (getRes.ok) {
+            const gistData = await getRes.json();
+            if (gistData.files && gistData.files[filename]) {
+                sha = gistData.files[filename].sha;
+            }
+        }
+        
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                files: {
+                    [filename]: { content: content, sha: sha || undefined }
+                }
+            })
+        });
+        
+        if (res.ok) {
+            console.log('✅ 静默同步成功');
+            showSyncToast('☁️ 已同步到云端');
+            return true;
+        } else {
+            console.error('静默同步失败:', await res.text());
+            return false;
+        }
+    } catch(e) {
+        console.error('静默同步网络错误:', e);
+        return false;
+    }
+}
+
+// 创建防抖版本的同步函数（延迟3秒）
+const silentSyncToGist = debounce(_silentSyncToGist, 3000);
+
+
+// 页面加载时自动从云端恢复（静默）
+async function autoRestoreFromCloud() {
+    const { token, gistId, filename } = loadGithubConfig();
+    if (!token || !gistId) {
+        console.log('⚠️ 自动恢复跳过：未配置 Gist');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        if (!res.ok) return;
+        
+        const gistData = await res.json();
+        const fileContent = gistData.files[filename]?.content;
+        if (!fileContent) return;
+        
+        const imported = JSON.parse(fileContent);
+        // 只有当本地数据为空时才恢复（避免覆盖用户本地数据）
+        const hasLocalData = Object.keys(MEAL_DATA).length > 0 || menuItemsList.length > 1;
+        if (!hasLocalData && imported.mealData && Object.keys(imported.mealData).length > 0) {
+            if (imported.mealData) MEAL_DATA = imported.mealData;
+            if (imported.menuItems) menuItemsList = imported.menuItems;
+            if (imported.nextId) nextId = imported.nextId;
+            saveDataToLocal();
+            renderWeeklyList();
+            renderCalendar();
+            renderMenuManagement();
+            console.log('✅ 首次加载，已从云端恢复数据');
+            showSyncToast('☁️ 已从云端恢复数据');
+        }
+    } catch(e) {
+        console.log('自动恢复失败:', e);
+    }
+}
+
+
 // ======================= GitHub 仓库配置（图片存储）=======================
 const GITHUB_CONFIG_KEY = 'github_repo_config';
 // ---------- 统一 GitHub 配置（同时用于 Gist 和仓库）----------
@@ -3112,6 +3271,11 @@ document.getElementById('nextWeekBtn')?.addEventListener('click', nextWeek);
             }
         }
     }, 100);
+
+
+    setTimeout(function() {
+        autoRestoreFromCloud();
+    }, 500);
 }
 
 // 设置图标弹窗相关
