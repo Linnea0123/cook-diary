@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>食谱计划 | 饮食管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif; }
         body { background: #ffffff; min-height: 100vh; }
@@ -794,14 +796,17 @@
 
 
 <!-- 图片裁剪弹窗 -->
+<!-- 图片裁剪弹窗（使用 cropperjs） -->
 <div id="cropModal" class="modal-overlay" style="z-index: 30000;">
     <div class="modal-container" style="max-width: 90%; width: 400px; background: white; border-radius: 16px;">
         <div class="modal-header">
             <span>✂️ 裁剪图片 (正方形)</span>
             <button class="close-crop-modal" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">×</button>
         </div>
-        <div class="modal-body" style="text-align: center; padding: 16px;">
-            <canvas id="cropCanvas" style="max-width: 100%; max-height: 60vh; border: 2px solid #ddd; border-radius: 8px; cursor: crosshair;"></canvas>
+        <div class="modal-body" style="padding: 16px;">
+            <div style="text-align: center;">
+                <img id="cropImage" src="" style="max-width: 100%; max-height: 50vh; display: block;">
+            </div>
             <div style="display: flex; justify-content: center; gap: 12px; margin-top: 16px;">
                 <button id="cancelCropBtn" style="background: #f0f0f0; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer;">取消</button>
                 <button id="confirmCropBtn" style="background: #2c5e2a; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer;">确认裁剪</button>
@@ -972,226 +977,132 @@ let currentListFilter = 'all';  // 列表视图的分类筛选
 let currentDetailRecipeId = null; // 当前查看的菜谱id
 
 
-// 裁剪相关变量
-let cropImage = null;
-let cropCanvas = null;
-let cropCtx = null;
-let isDragging = false;
-let startX, startY;
-let cropRect = { x: 0, y: 0, w: 0, h: 0 };
-let originalImageWidth = 0;
-let originalImageHeight = 0;
 
-// 初始化裁剪 canvas
-function initCropCanvas() {
-    cropCanvas = document.getElementById('cropCanvas');
-    if (!cropCanvas) return;
-    cropCtx = cropCanvas.getContext('2d');
-    
-    // 鼠标事件
-    cropCanvas.addEventListener('mousedown', startCrop);
-    cropCanvas.addEventListener('mousemove', drawCrop);
-    cropCanvas.addEventListener('mouseup', endCrop);
-    cropCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startCrop(e); });
-    cropCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawCrop(e); });
-    cropCanvas.addEventListener('touchend', endCrop);
-}
 
-function startCrop(e) {
-    isDragging = true;
-    const pos = getCanvasCoordinates(e);
-    startX = pos.x;
-    startY = pos.y;
-    cropRect = { x: startX, y: startY, w: 0, h: 0 };
-}
 
-function drawCrop(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    const pos = getCanvasCoordinates(e);
-    let currentX = pos.x;
-    let currentY = pos.y;
-    
-    // 计算正方形区域（以较大的边为准）
-    let width = currentX - startX;
-    let height = currentY - startY;
-    let size = Math.max(Math.abs(width), Math.abs(height));
-    if (currentX < startX) size = -size;
-    if (currentY < startY) size = -Math.abs(size);
-    
-    cropRect = {
-        x: startX,
-        y: startY,
-        w: size,
-        h: size
-    };
-    
-    // 边界限制
-    if (cropRect.x < 0) cropRect.x = 0;
-    if (cropRect.y < 0) cropRect.y = 0;
-    if (cropRect.x + cropRect.w > cropCanvas.width) cropRect.w = cropCanvas.width - cropRect.x;
-    if (cropRect.y + cropRect.h > cropCanvas.height) cropRect.h = cropCanvas.height - cropRect.y;
-    
-    redrawCanvas();
-}
 
-function endCrop() {
-    isDragging = false;
-    redrawCanvas();
-}
+let cropper = null;
 
-function getCanvasCoordinates(e) {
-    const rect = cropCanvas.getBoundingClientRect();
-    const scaleX = cropCanvas.width / rect.width;
-    const scaleY = cropCanvas.height / rect.height;
-    
-    let clientX, clientY;
-    if (e.touches) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-    } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-    }
-    
-    let x = (clientX - rect.left) * scaleX;
-    let y = (clientY - rect.top) * scaleY;
-    x = Math.max(0, Math.min(cropCanvas.width, x));
-    y = Math.max(0, Math.min(cropCanvas.height, y));
-    return { x, y };
-}
-
-function redrawCanvas() {
-    if (!cropImage || !cropCtx) return;
-    
-    // 清空并重绘原图
-    cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
-    cropCtx.drawImage(cropImage, 0, 0, cropCanvas.width, cropCanvas.height);
-    
-    // 绘制裁剪框
-    if (cropRect.w !== 0 && cropRect.h !== 0) {
-        cropCtx.save();
-        cropCtx.strokeStyle = '#2c5e2a';
-        cropCtx.lineWidth = 3;
-        cropCtx.setLineDash([8, 8]);
-        cropCtx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        
-        // 添加半透明遮罩
-        cropCtx.fillStyle = 'rgba(0,0,0,0.5)';
-        cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
-        cropCtx.clearRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        cropCtx.drawImage(cropImage, 0, 0, cropCanvas.width, cropCanvas.height, 
-            cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        cropCtx.restore();
-        
-        // 重新绘制裁剪框边框
-        cropCtx.save();
-        cropCtx.strokeStyle = '#fff';
-        cropCtx.lineWidth = 2;
-        cropCtx.setLineDash([8, 8]);
-        cropCtx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        cropCtx.restore();
-    }
-}
-
-// 执行裁剪并返回裁剪后的图片文件
-async function cropAndGetImage() {
-    return new Promise((resolve, reject) => {
-        if (!cropImage || cropRect.w <= 0 || cropRect.h <= 0) {
-            reject(new Error('请先选择裁剪区域'));
-            return;
-        }
-        
-        // 创建临时 canvas 进行裁剪
-        const tempCanvas = document.createElement('canvas');
-        const targetSize = Math.min(cropRect.w, cropRect.h);
-        tempCanvas.width = targetSize;
-        tempCanvas.height = targetSize;
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        // 计算裁剪区域在原始图片中的比例
-        const scaleX = originalImageWidth / cropCanvas.width;
-        const scaleY = originalImageHeight / cropCanvas.height;
-        
-        const sx = cropRect.x * scaleX;
-        const sy = cropRect.y * scaleY;
-        const sWidth = cropRect.w * scaleX;
-        const sHeight = cropRect.h * scaleY;
-        
-        tempCtx.drawImage(cropImage, sx, sy, sWidth, sHeight, 0, 0, targetSize, targetSize);
-        
-        // 转换为 File
-        tempCanvas.toBlob((blob) => {
-            const file = new File([blob], 'cropped_image.jpg', { type: 'image/jpeg' });
-            resolve(file);
-        }, 'image/jpeg', 0.9);
-    });
-}
-
-// 打开裁剪弹窗
 function openCropModal(imageFile) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        const imgElement = document.getElementById('cropImage');
+        const modal = document.getElementById('cropModal');
+        
         img.onload = () => {
-            cropImage = img;
-            originalImageWidth = img.width;
-            originalImageHeight = img.height;
-            
-            // 设置 canvas 尺寸（限制最大 500px）
-            const maxSize = 500;
-            let canvasWidth = img.width;
-            let canvasHeight = img.height;
-            if (canvasWidth > maxSize || canvasHeight > maxSize) {
-                const ratio = Math.min(maxSize / canvasWidth, maxSize / canvasHeight);
-                canvasWidth = canvasWidth * ratio;
-                canvasHeight = canvasHeight * ratio;
-            }
-            
-            cropCanvas.width = canvasWidth;
-            cropCanvas.height = canvasHeight;
-            
-            // 重置裁剪区域
-            cropRect = { x: 0, y: 0, w: canvasWidth, h: canvasHeight };
-            redrawCanvas();
-            
-            // 显示弹窗
-            const modal = document.getElementById('cropModal');
+            imgElement.src = img.src;
             modal.style.display = 'flex';
             
-            // 确认裁剪
-            const confirmBtn = document.getElementById('confirmCropBtn');
-            const cancelBtn = document.getElementById('cancelCropBtn');
-            const closeBtn = document.querySelector('.close-crop-modal');
-            
-            const cleanup = () => {
-                modal.style.display = 'none';
-                confirmBtn.removeEventListener('click', confirmHandler);
-                cancelBtn.removeEventListener('click', cleanup);
-                closeBtn.removeEventListener('click', cleanup);
-            };
-            
-            const confirmHandler = async () => {
-                try {
-                    const croppedFile = await cropAndGetImage();
-                    cleanup();
-                    resolve(croppedFile);
-                } catch(err) {
-                    reject(err);
-                    cleanup();
+            setTimeout(() => {
+                if (cropper) {
+                    cropper.destroy();
                 }
-            };
-            
-            confirmBtn.addEventListener('click', confirmHandler);
-            cancelBtn.addEventListener('click', cleanup);
-            closeBtn.addEventListener('click', cleanup);
+                
+                const imageWidth = imgElement.naturalWidth;
+                const imageHeight = imgElement.naturalHeight;
+                
+                // 计算适配宽度的正方形裁剪框大小
+                // 以图片宽度为基准，正方形裁剪框宽度 = 图片宽度
+                let cropWidth = imageWidth;
+                let cropHeight = imageWidth;
+                
+                // 如果正方形高度超出图片高度，则按高度调整
+                if (cropHeight > imageHeight) {
+                    cropHeight = imageHeight;
+                    cropWidth = imageHeight;
+                }
+                
+                cropper = new Cropper(imgElement, {
+                    aspectRatio: 1,                    // 1:1 正方形
+                    viewMode: 2,                       // 允许图片移动到框外
+                    dragMode: 'move',                  // 拖拽移动图片
+                    movable: true,                     // 允许移动图片
+                    zoomable: true,                    // 允许缩放
+                    zoomOnWheel: true,                 // 滚轮缩放
+                    zoomOnTouch: true,                 // 触摸缩放
+                    rotatable: false,
+                    scalable: false,
+                    cropBoxMovable: true,              // 允许移动裁剪框
+                    cropBoxResizable: true,            // 允许调整大小
+                    background: false,
+                    autoCropArea: 1,
+                    guides: true,
+                    center: true,
+                    highlight: true,
+                    responsive: true,
+                    minCropBoxWidth: 50,
+                    minCropBoxHeight: 50,
+                    // 设置初始裁剪框大小（适配宽度）
+                    ready() {
+                        // 设置裁剪框为正方形，宽度等于图片宽度
+                        const containerData = cropper.getContainerData();
+                        const imageData = cropper.getImageData();
+                        
+                        // 计算裁剪框位置和大小
+                        let cropBoxWidth = imageData.naturalWidth;
+                        let cropBoxHeight = imageData.naturalWidth;
+                        
+                        // 如果超出图片高度，调整为图片高度
+                        if (cropBoxHeight > imageData.naturalHeight) {
+                            cropBoxHeight = imageData.naturalHeight;
+                            cropBoxWidth = imageData.naturalHeight;
+                        }
+                        
+                        // 居中显示裁剪框
+                        const left = (imageData.naturalWidth - cropBoxWidth) / 2;
+                        const top = (imageData.naturalHeight - cropBoxHeight) / 2;
+                        
+                        cropper.setCropBoxData({
+                            left: Math.max(0, left),
+                            top: Math.max(0, top),
+                            width: cropBoxWidth,
+                            height: cropBoxHeight
+                        });
+                    }
+                });
+            }, 100);
         };
+        
         img.onerror = reject;
         img.src = URL.createObjectURL(imageFile);
+        
+        const confirmBtn = document.getElementById('confirmCropBtn');
+        const cancelBtn = document.getElementById('cancelCropBtn');
+        const closeBtn = document.querySelector('.close-crop-modal');
+        
+        const cleanup = () => {
+            modal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            URL.revokeObjectURL(img.src);
+            confirmBtn.removeEventListener('click', confirmHandler);
+            cancelBtn.removeEventListener('click', cleanup);
+            closeBtn.removeEventListener('click', cleanup);
+        };
+        
+        const confirmHandler = async () => {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 500,
+                    height: 500
+                });
+                canvas.toBlob((blob) => {
+                    const croppedFile = new File([blob], 'cropped_image.jpg', { type: 'image/jpeg' });
+                    cleanup();
+                    resolve(croppedFile);
+                }, 'image/jpeg', 0.9);
+            } else {
+                reject(new Error('裁剪器未初始化'));
+            }
+        };
+        
+        confirmBtn.addEventListener('click', confirmHandler);
+        cancelBtn.addEventListener('click', cleanup);
+        closeBtn.addEventListener('click', cleanup);
     });
 }
-
-
-
 function showRecipeDetail(recipeName) {
     const recipe = menuItemsList.find(r => r.name === recipeName);
     if (!recipe) return;
@@ -2588,7 +2499,7 @@ document.getElementById('editRecipeImageFile')?.addEventListener('change', async
     
     try {
         // 打开裁剪弹窗
-        initCropCanvas();
+        
         const croppedFile = await openCropModal(file);
         
         console.log('裁剪完成，开始上传...');
