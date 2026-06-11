@@ -651,6 +651,20 @@
 .sync-toast.show {
     opacity: 1;
 }
+/* 同步图标旋转动画 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.sync-spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+.sync-icon-spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
 
    </style>
 </head>
@@ -663,6 +677,28 @@
             <button class="tab-btn" data-view="calendarView">日历</button>
             <button class="tab-btn" data-view="menuView">菜单管理</button>
         </div>
+        </button>
+
+
+<!-- 👇 上传云朵（上箭头） -->
+<button id="syncUploadCloud" style="background: none; border: none; cursor: pointer; padding: 0 0 0 8px; display: flex; align-items: center;" title="上传到云端">
+    <svg width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23.995,13.089C23.996,13.059,24,13.03,24,13c0-4.418-3.582-8-8-8c-3.814,0-6.998,2.671-7.8,6.242C5.208,12.038,3,14.757,3,18c0,3.866,3.134,7,7,7h13c3.314,0,6-2.686,6-6C29,16.026,26.834,13.564,23.995,13.089z"/>
+        <polyline points="16,21 16,13 20,17" stroke="#888" stroke-width="1.5" fill="none"/>
+        <line x1="12" y1="17" x2="16" y2="13" stroke="#888" stroke-width="1.5"/>
+    </svg>
+</button>
+
+<!-- 👇 恢复云朵（下箭头） -->
+<button id="syncDownloadCloud" style="background: none; border: none; cursor: pointer; padding: 0 0 0 8px; display: flex; align-items: center;" title="从云端恢复">
+    
+    <svg width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23.995,13.089C23.996,13.059,24,13.03,24,13c0-4.418-3.582-8-8-8c-3.814,0-6.998,2.671-7.8,6.242C5.208,12.038,3,14.757,3,18c0,3.866,3.134,7,7,7h13c3.314,0,6-2.686,6-6C29,16.026,26.834,13.564,23.995,13.089z"/>
+        <polyline points="16,11 16,19 12,15" stroke="#888" stroke-width="1.5" fill="none"/>
+        <line x1="20" y1="15" x2="16" y2="19" stroke="#888" stroke-width="1.5"/>
+    </svg>
+</button>
+
         <button id="settingsIconBtn" style="background: none; border: none; cursor: pointer; padding: 0 0 0 10px; display: flex; align-items: center;">
             <svg width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
                 <g data-name="1" id="_1">
@@ -671,6 +707,7 @@
                 </g>
             </svg>
         </button>
+
     </div>
 </header>
 </header>
@@ -784,7 +821,7 @@
         <div class="modal-body">
             <div class="form-group">
                 <label>GitHub Token</label>
-                <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxx" style="width:100%;">
+                <input type="text" id="githubTokenInput" placeholder="ghp_xxxxxx" style="width:100%;">
                 <p style="font-size:0.6rem; color:#999;">需开启 repo 和 gist 权限</p>
             </div>
 
@@ -987,6 +1024,7 @@
 let currentSortMode = 'count';  // 'count' 或 'name'
 let currentSortDirection = 'desc';  // 'desc' 降序（多到少），'asc' 升序（少到多）
 let currentSearchKeyword = '';  // 搜索关键词
+let isSyncing = false;
 
 let currentCalendarFilter = 'all';
 let currentCalendarYear = 2026;
@@ -1771,6 +1809,7 @@ function closeRecordModal() {
     document.getElementById('recordModal').style.display = 'none';
     // 可选：保存当前数据
     saveRecord();
+    switchTab('listView');
 }   
 
 function saveRecord() {
@@ -2997,15 +3036,14 @@ function showSyncToast(message, isError = false) {
         document.body.appendChild(toast);
     }
     toast.textContent = message;
-    toast.style.background = isError ? 'rgba(198, 40, 40, 0.8)' : 'rgba(0,0,0,0.6)';
+    toast.style.background = isError ? 'rgba(198, 40, 40, 0.9)' : 'rgba(44, 94, 42, 0.9)';
     toast.classList.add('show');
     
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(() => {
         toast.classList.remove('show');
-    }, 1500);
+    }, 2000);
 }
-
 
 // 防抖函数
 function debounce(func, delay) {
@@ -3018,11 +3056,28 @@ function debounce(func, delay) {
 
 // 实际的同步函数（不防抖）
 async function _silentSyncToGist() {
-    const { token, gistId, filename } = loadGithubConfig();
-    if (!token || !gistId) {
-        console.log('⚠️ 静默同步跳过：未配置 Gist');
+    if (isSyncing) {
+        console.log('⚠️ 已有同步进行中，跳过');
         return false;
     }
+    
+    console.log('🔍 [静默同步] 开始');
+    const { token, gistId, filename } = loadGithubConfig();
+    
+    if (!token || !gistId) {
+        console.log('⚠️ 未配置');
+        return false;
+    }
+    
+    isSyncing = true;
+    startUploadSpin();
+    
+    // 👇 设置 10 秒强制停止的保险
+    const safetyTimer = setTimeout(() => {
+        console.warn('⚠️ 同步超时（10秒），强制停止旋转');
+        stopUploadSpin();
+        isSyncing = false;
+    }, 10000);
     
     const exportData = {
         version: "1.0",
@@ -3034,16 +3089,17 @@ async function _silentSyncToGist() {
     const content = JSON.stringify(exportData, null, 2);
     
     try {
-        // 先获取当前 Gist 的 sha（用于更新）
         let sha = '';
         const getRes = await fetch(`https://api.github.com/gists/${gistId}`, {
             headers: { 'Authorization': `token ${token}` }
         });
-        if (getRes.ok) {
-            const gistData = await getRes.json();
-            if (gistData.files && gistData.files[filename]) {
-                sha = gistData.files[filename].sha;
-            }
+        
+        if (!getRes.ok) throw new Error(`获取失败: ${getRes.status}`);
+        
+        const gistData = await getRes.json();
+        
+        if (gistData.files && gistData.files[filename]) {
+            sha = gistData.files[filename].sha;
         }
         
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
@@ -3053,27 +3109,27 @@ async function _silentSyncToGist() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                files: {
-                    [filename]: { content: content, sha: sha || undefined }
-                }
+                files: { [filename]: { content: content, sha: sha || undefined } }
             })
         });
         
         if (res.ok) {
-            console.log('✅ 静默同步成功');
-            showSyncToast('☁️ 已同步到云端');
-            return true;
+            console.log('✅ 同步成功');
+            showSyncToast('✅ 已同步到云端', false);
         } else {
-            console.error('静默同步失败:', await res.text());
-            return false;
+            throw new Error(`上传失败: ${res.status}`);
         }
     } catch(e) {
-        console.error('静默同步网络错误:', e);
-        return false;
+        console.error('❌ 同步失败:', e.message);
+        showSyncToast('❌ 同步失败', true);
+    } finally {
+        clearTimeout(safetyTimer);  // 清除保险
+        console.log('🏁 停止旋转');
+        stopUploadSpin();
+        isSyncing = false;
     }
 }
 
-// 创建防抖版本的同步函数（延迟3秒）
 const silentSyncToGist = debounce(_silentSyncToGist, 3000);
 
 
@@ -3247,8 +3303,226 @@ function fileToBase64(file) {
         reader.readAsDataURL(file);
     });
 }
+// 获取云朵元素
+const syncUploadCloud = document.getElementById('syncUploadCloud');
+const syncDownloadCloud = document.getElementById('syncDownloadCloud');
+let uploadSpinning = false;
+let downloadSpinning = false;
 
- function init(){
+// 上传云朵旋转控制
+function startUploadSpin() {
+    if (uploadSpinning) return;
+    uploadSpinning = true;
+    const svg = syncUploadCloud?.querySelector('svg');
+    if (svg) {
+        svg.style.animation = 'spin 1s linear infinite';
+        svg.style.stroke = '#2c5e2a';
+    }
+}
+function stopUploadSpin() {
+    console.log('⏹️ stopUploadSpin 被调用，当前 uploadSpinning =', uploadSpinning);
+    uploadSpinning = false;
+    const syncUploadCloud = document.getElementById('syncUploadCloud');
+    const svg = syncUploadCloud?.querySelector('svg');
+    if (svg) {
+        console.log('✅ 找到云朵，强制停止旋转');
+        // 关键：先设为 none，再强制重绘，再恢复
+        svg.style.animation = 'none';
+        // 强制重绘（触发浏览器重新计算样式）
+        void svg.offsetHeight;
+        svg.style.animation = '';
+        svg.style.stroke = '#888';
+        console.log('✅ 旋转已停止');
+    } else {
+        console.warn('⚠️ 找不到云朵元素');
+    }
+}
+// 下载云朵旋转控制
+function startDownloadSpin() {
+    if (downloadSpinning) return;
+    downloadSpinning = true;
+    const svg = syncDownloadCloud?.querySelector('svg');
+    if (svg) {
+        svg.style.animation = 'spin 1s linear infinite';
+        svg.style.stroke = '#2c5e2a';
+    }
+}
+
+function stopDownloadSpin() {
+    downloadSpinning = false;
+    const svg = syncDownloadCloud?.querySelector('svg');
+    if (svg) {
+        svg.style.animation = '';
+        svg.style.stroke = '#888';
+    }
+}
+
+// 上传到 Gist（带旋转效果）
+async function uploadToGistWithSpin() {
+    console.log('🔍 [手动上传] 开始检查配置...');
+    const { token, gistId, filename } = loadGithubConfig();
+    
+    if (!token || !gistId) {
+        console.log('❌ [手动上传] 缺少配置');
+        alert("⚠️ 请先在「GitHub 仓库设置」中填写 Token 和 Gist ID");
+        return;
+    }
+    
+    console.log('✅ [手动上传] 配置有效', { gistId: gistId.substring(0, 10) + '...' });
+    startUploadSpin();
+    showSyncToast('☁️ 正在上传...', false);
+    
+    const exportData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        mealData: MEAL_DATA,
+        menuItems: menuItemsList,
+        nextId: nextId
+    };
+    const content = JSON.stringify(exportData, null, 2);
+    console.log(`📦 [手动上传] 数据大小: ${(content.length / 1024).toFixed(1)} KB`);
+    
+    try {
+        console.log('🔄 [手动上传] 获取 Gist 文件信息...');
+        let sha = '';
+        const getRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (getRes.ok) {
+            const gistData = await getRes.json();
+            console.log('✅ [手动上传] 获取 Gist 成功');
+            if (gistData.files && gistData.files[filename]) {
+    sha = gistData.files[filename].sha;
+    if (sha) {
+        console.log(`📄 [静默同步] 文件 SHA: ${sha.substring(0, 8)}...`);
+    } else {
+        console.log(`📄 [静默同步] 文件存在，但无 SHA（新文件）`);
+    }
+} else {
+    console.log(`📄 [静默同步] 文件 ${filename} 不存在，将创建新文件`);
+}
+        } else {
+            console.error(`❌ [手动上传] 获取 Gist 失败: ${getRes.status}`);
+            throw new Error(`获取 Gist 失败: ${getRes.status}`);
+        }
+        
+        console.log('🔄 [手动上传] 上传数据到 Gist...');
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                files: {
+                    [filename]: { content: content, sha: sha || undefined }
+                }
+            })
+        });
+        
+        if (res.ok) {
+            console.log('✅ [手动上传] 上传成功！时间:', new Date().toLocaleTimeString());
+            showSyncToast('✅ 上传成功', false);
+            alert('✅ 上传成功！数据已保存到 Gist');
+        } else {
+            const errorText = await res.text();
+            console.error('❌ [手动上传] 上传失败:', res.status, errorText);
+            showSyncToast(`❌ 上传失败: ${res.status}`, true);
+            alert(`❌ 上传失败: ${res.status}\n${errorText.substring(0, 200)}`);
+        }
+    } catch(e) {
+        console.error('❌ [手动上传] 网络错误:', e.message);
+        showSyncToast('❌ 网络错误: ' + e.message, true);
+        alert('❌ 网络错误: ' + e.message);
+    } finally {
+        console.log('🏁 [手动上传] 完成，停止旋转');
+        stopUploadSpin();
+    }
+}
+// 从 Gist 恢复（带旋转效果）
+async function restoreFromGistWithSpin() {
+    console.log('🔍 [手动恢复] 开始检查配置...');
+    const { token, gistId, filename } = loadGithubConfig();
+    
+    if (!token || !gistId) {
+        console.log('❌ [手动恢复] 缺少配置');
+        alert("⚠️ 请先在「GitHub 仓库设置」中填写 Token 和 Gist ID");
+        return;
+    }
+    
+    if (!confirm("从云端恢复会覆盖当前数据，确定继续吗？")) {
+        console.log('🚫 [手动恢复] 用户取消');
+        return;
+    }
+    
+    console.log('✅ [手动恢复] 配置有效');
+    startDownloadSpin();
+    showSyncToast('☁️ 正在恢复...', false);
+    
+    try {
+        console.log(`🔄 [手动恢复] 获取 Gist: ${gistId}`);
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { 'Authorization': `token ${token}` }
+        });
+        
+        if (!res.ok) {
+            console.error(`❌ [手动恢复] 获取失败: ${res.status}`);
+            throw new Error(`获取 Gist 失败: ${res.status}`);
+        }
+        
+        const gistData = await res.json();
+        console.log('✅ [手动恢复] 获取 Gist 成功');
+        
+        const fileContent = gistData.files[filename]?.content;
+        if (!fileContent) {
+            console.error(`❌ [手动恢复] 找不到文件: ${filename}`);
+            throw new Error(`找不到文件 ${filename}`);
+        }
+        
+        console.log(`📦 [手动恢复] 数据大小: ${(fileContent.length / 1024).toFixed(1)} KB`);
+        const imported = JSON.parse(fileContent);
+        
+        if (imported.mealData) {
+            MEAL_DATA = imported.mealData;
+            console.log(`✅ [手动恢复] 加载了 ${Object.keys(MEAL_DATA).length} 天的记录`);
+        }
+        if (imported.menuItems) {
+            menuItemsList = imported.menuItems;
+            console.log(`✅ [手动恢复] 加载了 ${menuItemsList.length} 个菜谱`);
+        }
+        if (imported.nextId) nextId = imported.nextId;
+        
+        saveDataToLocal();
+        renderWeeklyList();
+        renderCalendar();
+        updateSelectedPanel('2026-06-10');
+        renderMenuManagement();
+        
+        console.log('✅ [手动恢复] 恢复成功！时间:', new Date().toLocaleTimeString());
+        showSyncToast('✅ 恢复成功', false);
+        alert('✅ 恢复成功！数据已从云端同步');
+    } catch(e) {
+        console.error('❌ [手动恢复] 失败:', e.message);
+        showSyncToast('❌ 恢复失败: ' + e.message, true);
+        alert('❌ 恢复失败: ' + e.message);
+    } finally {
+        console.log('🏁 [手动恢复] 完成，停止旋转');
+        stopDownloadSpin();
+    }
+}
+
+
+
+function init(){
+
+    // 绑定云朵按钮事件
+if (syncUploadCloud) {
+    syncUploadCloud.addEventListener('click', uploadToGistWithSpin);
+}
+if (syncDownloadCloud) {
+    syncDownloadCloud.addEventListener('click', restoreFromGistWithSpin);
+}
     loadDataFromLocal();
     renderWeeklyList();
     renderCalendar();
@@ -3277,6 +3551,9 @@ document.getElementById('nextWeekBtn')?.addEventListener('click', nextWeek);
         autoRestoreFromCloud();
     }, 500);
 }
+
+
+
 
 // 设置图标弹窗相关
 const settingsBtn = document.getElementById('settingsIconBtn');
