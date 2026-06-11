@@ -3097,10 +3097,11 @@ const silentSyncToGist = debounce(_silentSyncToGist, 5000);
 
 
 // 页面加载时自动从云端恢复（静默）
+// 页面加载时从云端合并数据（不覆盖本地已有的）
 async function autoRestoreFromCloud() {
     const { token, gistId, filename } = loadGithubConfig();
     if (!token || !gistId) {
-        console.log('⚠️ 自动恢复跳过：未配置 Gist');
+        console.log('⚠️ 自动合并跳过：未配置 Gist');
         return;
     }
     
@@ -3115,24 +3116,119 @@ async function autoRestoreFromCloud() {
         if (!fileContent) return;
         
         const imported = JSON.parse(fileContent);
-        // 只有当本地数据为空时才恢复（避免覆盖用户本地数据）
-        const hasLocalData = Object.keys(MEAL_DATA).length > 0 || menuItemsList.length > 1;
-        if (!hasLocalData && imported.mealData && Object.keys(imported.mealData).length > 0) {
-            if (imported.mealData) MEAL_DATA = imported.mealData;
-            if (imported.menuItems) menuItemsList = imported.menuItems;
-            if (imported.nextId) nextId = imported.nextId;
-            saveDataToLocal();
-            renderWeeklyList();
-            renderCalendar();
-            renderMenuManagement();
-            console.log('✅ 首次加载，已从云端恢复数据');
-            showSyncToast('☁️ 已从云端恢复数据');
+        
+        let addedCount = 0;
+        let updatedCount = 0;
+        
+        // ========== 合并菜单（菜谱） ==========
+        if (imported.menuItems && Array.isArray(imported.menuItems)) {
+            for (const cloudItem of imported.menuItems) {
+                const existingIndex = menuItemsList.findIndex(local => local.id === cloudItem.id);
+                
+                if (existingIndex === -1) {
+                    // 本地没有，直接添加
+                    menuItemsList.push(cloudItem);
+                    addedCount++;
+                    console.log(`➕ 新增菜谱: ${cloudItem.name}`);
+                } else {
+                    // 本地已有，比较更新时间（如果有 updatedAt 字段）
+                    const localItem = menuItemsList[existingIndex];
+                    const localTime = new Date(localItem.updatedAt || localItem.registered || '1970-01-01');
+                    const cloudTime = new Date(cloudItem.updatedAt || cloudItem.registered || '1970-01-01');
+                    
+                    if (cloudTime > localTime) {
+                        // 云端版本更新，覆盖本地
+                        menuItemsList[existingIndex] = cloudItem;
+                        updatedCount++;
+                        console.log(`🔄 更新菜谱: ${cloudItem.name} (云端更新)`);
+                    } else {
+                        console.log(`⏭️ 保留本地菜谱: ${localItem.name} (本地更新)`);
+                    }
+                }
+            }
         }
+        
+        // ========== 合并饮食记录 ==========
+        if (imported.mealData && typeof imported.mealData === 'object') {
+            for (const [dateStr, cloudRecord] of Object.entries(imported.mealData)) {
+                if (!MEAL_DATA[dateStr]) {
+                    // 本地没有这一天的记录，直接添加
+                    MEAL_DATA[dateStr] = cloudRecord;
+                    addedCount++;
+                    console.log(`➕ 新增饮食记录: ${dateStr}`);
+                } else {
+                    // 本地已有，合并三餐（不覆盖，只添加不存在的菜谱）
+                    const localRecord = MEAL_DATA[dateStr];
+                    let recordChanged = false;
+                    
+                    // 合并早餐
+                    if (cloudRecord.breakfast && Array.isArray(cloudRecord.breakfast)) {
+                        if (!localRecord.breakfast) localRecord.breakfast = [];
+                        for (const food of cloudRecord.breakfast) {
+                            if (!localRecord.breakfast.includes(food)) {
+                                localRecord.breakfast.push(food);
+                                recordChanged = true;
+                            }
+                        }
+                    }
+                    
+                    // 合并午餐
+                    if (cloudRecord.lunch && Array.isArray(cloudRecord.lunch)) {
+                        if (!localRecord.lunch) localRecord.lunch = [];
+                        for (const food of cloudRecord.lunch) {
+                            if (!localRecord.lunch.includes(food)) {
+                                localRecord.lunch.push(food);
+                                recordChanged = true;
+                            }
+                        }
+                    }
+                    
+                    // 合并晚餐
+                    if (cloudRecord.dinner && Array.isArray(cloudRecord.dinner)) {
+                        if (!localRecord.dinner) localRecord.dinner = [];
+                        for (const food of cloudRecord.dinner) {
+                            if (!localRecord.dinner.includes(food)) {
+                                localRecord.dinner.push(food);
+                                recordChanged = true;
+                            }
+                        }
+                    }
+                    
+                    if (recordChanged) {
+                        updatedCount++;
+                        console.log(`🔄 合并饮食记录: ${dateStr}`);
+                    }
+                }
+            }
+        }
+        
+        // 更新 nextId（取最大值）
+        if (imported.nextId && imported.nextId > nextId) {
+            nextId = imported.nextId;
+        }
+        
+        // 重新计算使用次数
+        recalculateAllUsageCounts();
+        
+        // 保存合并后的数据
+        saveDataToLocal();
+        
+        // 刷新界面
+        renderWeeklyList();
+        renderCalendar();
+        renderMenuManagement();
+        
+        if (addedCount > 0 || updatedCount > 0) {
+            console.log(`✅ 云端合并完成: 新增 ${addedCount} 条菜谱/记录，更新 ${updatedCount} 条`);
+            showSyncToast(`📦 已合并: 新增 ${addedCount} 条，更新 ${updatedCount} 条`, false);
+        } else {
+            console.log('📦 云端数据已是最新');
+        }
+        
     } catch(e) {
-        console.log('自动恢复失败:', e);
+        console.log('自动合并失败:', e);
     }
 }
-
 
 // ======================= GitHub 仓库配置（图片存储）=======================
 const GITHUB_CONFIG_KEY = 'github_repo_config';
