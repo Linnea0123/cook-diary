@@ -1021,6 +1021,18 @@
 </div>
 
 <script>
+
+// ======================= 统一的存储 KEY 前缀 =======================
+const STORAGE_PREFIX = 'recipe_plan_';
+const GITHUB_TOKEN_KEY = STORAGE_PREFIX + 'github_token';
+const GITHUB_GIST_ID_KEY = STORAGE_PREFIX + 'github_gist_id';
+const GITHUB_FILENAME_KEY = STORAGE_PREFIX + 'github_filename';
+const GITHUB_REPO_OWNER_KEY = STORAGE_PREFIX + 'repo_owner';
+const GITHUB_REPO_NAME_KEY = STORAGE_PREFIX + 'repo_name';
+const GITHUB_BRANCH_KEY = STORAGE_PREFIX + 'branch';
+const GITHUB_IMAGE_PATH_KEY = STORAGE_PREFIX + 'image_path';
+const LAST_MERGE_DATE_KEY = STORAGE_PREFIX + 'last_merge_date';
+let isFirstLoad = true;
 let currentSortMode = 'count';  // 'count' 或 'name'
 let currentSortDirection = 'desc';  // 'desc' 降序（多到少），'asc' 升序（少到多）
 let currentSearchKeyword = '';  // 搜索关键词
@@ -2780,12 +2792,18 @@ function saveDataToLocal() {
     };
     localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
     
-    // ========== 新增：自动静默同步（防抖）==========
+    // ✅ 首次加载时不触发同步
+    if (isFirstLoad) {
+        console.log('📦 首次加载，跳过自动同步');
+        return;
+    }
+    
     if (window._syncTimer) clearTimeout(window._syncTimer);
     window._syncTimer = setTimeout(() => {
         silentSyncToGist();
-    }, 5000);  // 用户停止操作2秒后自动同步
+    }, 5000);
 }
+
 
 // ✅ 在这里添加新函数（放在这两个函数之间或旁边都可以）
 function recalculateAllUsageCounts() {
@@ -3098,17 +3116,33 @@ const silentSyncToGist = debounce(_silentSyncToGist, 5000);
 
 // 页面加载时自动从云端恢复（静默）
 // 页面加载时从云端合并数据（不覆盖本地已有的）
+// 页面加载时从云端合并数据 - 每天只合并一次
 async function autoRestoreFromCloud() {
+    // 检查今天是否已经合并过
+    const today = new Date().toISOString().split('T')[0];
+    const lastMergeDate = localStorage.getItem(LAST_MERGE_DATE_KEY);
+    
+    if (lastMergeDate === today) {
+        console.log('📅 今天已经合并过云端数据，跳过自动恢复');
+        return;
+    }
+    
+    console.log('🔍 [自动合并] 开始检查配置...');
     const { token, gistId, filename } = loadGithubConfig();
+    
     if (!token || !gistId) {
         console.log('⚠️ 自动合并跳过：未配置 Gist');
         return;
     }
     
+    console.log('✅ [自动合并] 配置有效，开始从云端合并...');
+    showSyncToast('☁️ 正在合并云端数据...', false);
+    
     try {
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
             headers: { 'Authorization': `token ${token}` }
         });
+        
         if (!res.ok) return;
         
         const gistData = await res.json();
@@ -3120,48 +3154,35 @@ async function autoRestoreFromCloud() {
         let addedCount = 0;
         let updatedCount = 0;
         
-        // ========== 合并菜单（菜谱） ==========
+        // 合并菜单（菜谱）
         if (imported.menuItems && Array.isArray(imported.menuItems)) {
             for (const cloudItem of imported.menuItems) {
                 const existingIndex = menuItemsList.findIndex(local => local.id === cloudItem.id);
-                
                 if (existingIndex === -1) {
-                    // 本地没有，直接添加
                     menuItemsList.push(cloudItem);
                     addedCount++;
-                    console.log(`➕ 新增菜谱: ${cloudItem.name}`);
                 } else {
-                    // 本地已有，比较更新时间（如果有 updatedAt 字段）
                     const localItem = menuItemsList[existingIndex];
                     const localTime = new Date(localItem.updatedAt || localItem.registered || '1970-01-01');
                     const cloudTime = new Date(cloudItem.updatedAt || cloudItem.registered || '1970-01-01');
-                    
                     if (cloudTime > localTime) {
-                        // 云端版本更新，覆盖本地
                         menuItemsList[existingIndex] = cloudItem;
                         updatedCount++;
-                        console.log(`🔄 更新菜谱: ${cloudItem.name} (云端更新)`);
-                    } else {
-                        console.log(`⏭️ 保留本地菜谱: ${localItem.name} (本地更新)`);
                     }
                 }
             }
         }
         
-        // ========== 合并饮食记录 ==========
+        // 合并饮食记录
         if (imported.mealData && typeof imported.mealData === 'object') {
             for (const [dateStr, cloudRecord] of Object.entries(imported.mealData)) {
                 if (!MEAL_DATA[dateStr]) {
-                    // 本地没有这一天的记录，直接添加
                     MEAL_DATA[dateStr] = cloudRecord;
                     addedCount++;
-                    console.log(`➕ 新增饮食记录: ${dateStr}`);
                 } else {
-                    // 本地已有，合并三餐（不覆盖，只添加不存在的菜谱）
                     const localRecord = MEAL_DATA[dateStr];
                     let recordChanged = false;
                     
-                    // 合并早餐
                     if (cloudRecord.breakfast && Array.isArray(cloudRecord.breakfast)) {
                         if (!localRecord.breakfast) localRecord.breakfast = [];
                         for (const food of cloudRecord.breakfast) {
@@ -3171,8 +3192,6 @@ async function autoRestoreFromCloud() {
                             }
                         }
                     }
-                    
-                    // 合并午餐
                     if (cloudRecord.lunch && Array.isArray(cloudRecord.lunch)) {
                         if (!localRecord.lunch) localRecord.lunch = [];
                         for (const food of cloudRecord.lunch) {
@@ -3182,8 +3201,6 @@ async function autoRestoreFromCloud() {
                             }
                         }
                     }
-                    
-                    // 合并晚餐
                     if (cloudRecord.dinner && Array.isArray(cloudRecord.dinner)) {
                         if (!localRecord.dinner) localRecord.dinner = [];
                         for (const food of cloudRecord.dinner) {
@@ -3193,36 +3210,25 @@ async function autoRestoreFromCloud() {
                             }
                         }
                     }
-                    
-                    if (recordChanged) {
-                        updatedCount++;
-                        console.log(`🔄 合并饮食记录: ${dateStr}`);
-                    }
+                    if (recordChanged) updatedCount++;
                 }
             }
         }
         
-        // 更新 nextId（取最大值）
-        if (imported.nextId && imported.nextId > nextId) {
-            nextId = imported.nextId;
-        }
+        if (imported.nextId && imported.nextId > nextId) nextId = imported.nextId;
         
-        // 重新计算使用次数
         recalculateAllUsageCounts();
-        
-        // 保存合并后的数据
         saveDataToLocal();
-        
-        // 刷新界面
         renderWeeklyList();
         renderCalendar();
         renderMenuManagement();
         
+        // ✅ 记录今天已经合并过
+        localStorage.setItem(LAST_MERGE_DATE_KEY, today);
+        
         if (addedCount > 0 || updatedCount > 0) {
-            console.log(`✅ 云端合并完成: 新增 ${addedCount} 条菜谱/记录，更新 ${updatedCount} 条`);
+            console.log(`✅ 云端合并完成: 新增 ${addedCount} 条，更新 ${updatedCount} 条`);
             showSyncToast(`📦 已合并: 新增 ${addedCount} 条，更新 ${updatedCount} 条`, false);
-        } else {
-            console.log('📦 云端数据已是最新');
         }
         
     } catch(e) {
@@ -3230,36 +3236,35 @@ async function autoRestoreFromCloud() {
     }
 }
 
+
+
 // ======================= GitHub 仓库配置（图片存储）=======================
 const GITHUB_CONFIG_KEY = 'github_repo_config';
 // ---------- 统一 GitHub 配置（同时用于 Gist 和仓库）----------
 function saveGithubConfig(token, gistId, filename, repoConfig) {
-    if (token) localStorage.setItem(PAGE_ID + '_github_token', token);
-    if (gistId) localStorage.setItem(PAGE_ID + '_github_gist_id', gistId);
-    if (filename) localStorage.setItem('github_gist_filename', filename);
+    if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token);
+    if (gistId) localStorage.setItem(GITHUB_GIST_ID_KEY, gistId);
+    if (filename) localStorage.setItem(GITHUB_FILENAME_KEY, filename);
     if (repoConfig) {
-        localStorage.setItem('github_repo_owner', repoConfig.owner || '');
-        localStorage.setItem('github_repo_name', repoConfig.repo || '');
-        localStorage.setItem('github_branch', repoConfig.branch || 'main');
-        localStorage.setItem('github_image_path', repoConfig.imagePath || 'recipe_images/');
+        localStorage.setItem(GITHUB_REPO_OWNER_KEY, repoConfig.owner || '');
+        localStorage.setItem(GITHUB_REPO_NAME_KEY, repoConfig.repo || '');
+        localStorage.setItem(GITHUB_BRANCH_KEY, repoConfig.branch || 'main');
+        localStorage.setItem(GITHUB_IMAGE_PATH_KEY, repoConfig.imagePath || 'recipe_images/');
     }
 }
-
 function loadGithubConfig() {
     return {
-        token: localStorage.getItem(PAGE_ID + '_github_token') || '',
-gistId: localStorage.getItem(PAGE_ID + '_github_gist_id') || '',
-        filename: localStorage.getItem('github_gist_filename') || 'recipe_data.json',
+        token: localStorage.getItem(GITHUB_TOKEN_KEY) || '',
+        gistId: localStorage.getItem(GITHUB_GIST_ID_KEY) || '',
+        filename: localStorage.getItem(GITHUB_FILENAME_KEY) || 'recipe_data.json',
         repo: {
-            owner: 'Linnea0123',
-            name: 'cook-diary',
-            branch: 'main',
-            imagePath: 'recipe_images/'
+            owner: localStorage.getItem(GITHUB_REPO_OWNER_KEY) || 'Linnea0123',
+            name: localStorage.getItem(GITHUB_REPO_NAME_KEY) || 'cook-diary',
+            branch: localStorage.getItem(GITHUB_BRANCH_KEY) || 'main',
+            imagePath: localStorage.getItem(GITHUB_IMAGE_PATH_KEY) || 'recipe_images/'
         }
     };
-}// 检查是否配置了仓库（用于图片上传）
-
-
+}
 // 检查是否配置了 GitHub 仓库（用于图片上传）
 function isGithubConfigured() {
     const config = loadGithubConfig();
@@ -3499,7 +3504,6 @@ async function uploadToGistWithSpin() {
         stopUploadSpin();
     }
 }
-// 从 Gist 恢复（带旋转效果）
 async function restoreFromGistWithSpin() {
     console.log('🔍 [手动恢复] 开始检查配置...');
     const { token, gistId, filename } = loadGithubConfig();
@@ -3521,8 +3525,14 @@ async function restoreFromGistWithSpin() {
     
     try {
         console.log(`🔄 [手动恢复] 获取 Gist: ${gistId}`);
+        
+        // ✅ 添加禁用缓存的请求头
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-            headers: { 'Authorization': `token ${token}` }
+            headers: { 
+                'Authorization': `token ${token}`,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
         });
         
         if (!res.ok) {
@@ -3542,6 +3552,10 @@ async function restoreFromGistWithSpin() {
         console.log(`📦 [手动恢复] 数据大小: ${(fileContent.length / 1024).toFixed(1)} KB`);
         const imported = JSON.parse(fileContent);
         
+        console.log('云端同步时间:', imported.exportDate);
+        console.log('云端菜谱数量:', imported.menuItems?.length);
+        
+        // ✅ 直接覆盖，不做任何合并比较
         if (imported.mealData) {
             MEAL_DATA = imported.mealData;
             console.log(`✅ [手动恢复] 加载了 ${Object.keys(MEAL_DATA).length} 天的记录`);
@@ -3549,18 +3563,25 @@ async function restoreFromGistWithSpin() {
         if (imported.menuItems) {
             menuItemsList = imported.menuItems;
             console.log(`✅ [手动恢复] 加载了 ${menuItemsList.length} 个菜谱`);
+            console.log('菜谱列表:', menuItemsList.map(m => m.name));
         }
         if (imported.nextId) nextId = imported.nextId;
         
+        // ✅ 重新计算使用次数
+        recalculateAllUsageCounts();
+        
+        // ✅ 保存到本地
         saveDataToLocal();
+        
+        // ✅ 强制刷新界面
         renderWeeklyList();
         renderCalendar();
-        updateSelectedPanel('2026-06-10');
         renderMenuManagement();
         
         console.log('✅ [手动恢复] 恢复成功！时间:', new Date().toLocaleTimeString());
         showSyncToast('✅ 恢复成功', false);
         alert('✅ 恢复成功！数据已从云端同步');
+        
     } catch(e) {
         console.error('❌ [手动恢复] 失败:', e.message);
         showSyncToast('❌ 恢复失败: ' + e.message, true);
@@ -3570,8 +3591,6 @@ async function restoreFromGistWithSpin() {
         stopDownloadSpin();
     }
 }
-
-
 
 function init(){
 
@@ -3606,9 +3625,13 @@ document.getElementById('nextWeekBtn')?.addEventListener('click', nextWeek);
     }, 100);
 
 
-    setTimeout(function() {
-        autoRestoreFromCloud();
-    }, 500);
+  setTimeout(function() {
+    autoRestoreFromCloud().finally(() => {
+        // ✅ 合并完成后允许后续自动同步
+        isFirstLoad = false;
+        console.log('🏁 初始化完成，现在可以自动同步了');
+    });
+}, 500);
 }
 
 
