@@ -2588,6 +2588,25 @@ function renderMealList(containerId, items) {
         return;
     }
     
+    // 定义分类顺序
+    const categoryOrder = ['主食', '蔬菜', '蛋白质', '油脂', '水果'];
+    
+    // 获取菜谱分类的函数
+    const getCategory = (foodName) => {
+        const recipe = menuItemsList.find(r => r.name === foodName);
+        return recipe ? recipe.category : '';
+    };
+    
+    // 按分类顺序排序
+    const sortedItems = [...items].sort((a, b) => {
+        const catA = getCategory(a);
+        const catB = getCategory(b);
+        const indexA = categoryOrder.indexOf(catA);
+        const indexB = categoryOrder.indexOf(catB);
+        // 如果分类不在预定义顺序中，放到最后
+        return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
+    
     // 获取菜谱分类样式类名的函数
     const getTagClass = (foodName) => {
         const recipe = menuItemsList.find(r => r.name === foodName);
@@ -2600,7 +2619,7 @@ function renderMealList(containerId, items) {
         return '';
     };
     
-    container.innerHTML = items.map(item => `
+    container.innerHTML = sortedItems.map(item => `
         <div class="meal-tag ${getTagClass(item)}">
             <span>${escapeHtml(item)}</span>
             <button class="delete-meal" data-item="${escapeHtml(item)}">✕</button>
@@ -2615,10 +2634,15 @@ function renderMealList(containerId, items) {
         btn._deleteHandler = (e) => {
             e.stopPropagation();
             const itemName = btn.dataset.item;
+            
+            // 确定餐次类型
             let mealKey = '';
-            if (containerId === 'recordBreakfastList') mealKey = 'breakfast';
-            else if (containerId === 'recordLunchList') mealKey = 'lunch';
-            else mealKey = 'dinner';
+            if (containerId === 'recordMomBreakfastList') mealKey = 'mom_breakfast';
+            else if (containerId === 'recordMomLunchList') mealKey = 'mom_lunch';
+            else if (containerId === 'recordMomDinnerList') mealKey = 'mom_dinner';
+            else if (containerId === 'recordBabyBreakfastList') mealKey = 'baby_breakfast';
+            else if (containerId === 'recordBabyLunchList') mealKey = 'baby_lunch';
+            else if (containerId === 'recordBabyDinnerList') mealKey = 'baby_dinner';
             
             const record = MEAL_DATA[currentRecordDate] || {};
             if (record[mealKey]) {
@@ -2636,7 +2660,6 @@ function renderMealList(containerId, items) {
         btn.addEventListener('click', btn._deleteHandler);
     });
 }
-
 function openRecordModal(dateStr) {
     currentRecordDate = dateStr;
     loadRecordData(currentRecordDate);
@@ -2762,10 +2785,25 @@ let currentSelectedRecipes = [];
 let pendingMealType = null;
 let selectedRecipeIds = [];
 
+// 修复 openSelectFood 函数
 function openSelectFood(mealType) {
     // 保存当前正在编辑的餐次
     pendingMealType = mealType;
-    selectedRecipeIds = [];
+    
+    // 获取当前餐次已有的菜谱名称
+    const currentRecord = MEAL_DATA[currentRecordDate] || {};
+    let existingNames = [];
+    
+    // 根据 mealType 获取已有的菜谱
+    if (mealType === 'mom_breakfast') existingNames = currentRecord.mom_breakfast || [];
+    else if (mealType === 'mom_lunch') existingNames = currentRecord.mom_lunch || [];
+    else if (mealType === 'mom_dinner') existingNames = currentRecord.mom_dinner || [];
+    else if (mealType === 'baby_breakfast') existingNames = currentRecord.baby_breakfast || [];
+    else if (mealType === 'baby_lunch') existingNames = currentRecord.baby_lunch || [];
+    else if (mealType === 'baby_dinner') existingNames = currentRecord.baby_dinner || [];
+    
+    // 将已有的菜谱ID设置为选中状态（用于显示勾选）
+    selectedRecipeIds = menuItemsList.filter(item => existingNames.includes(item.name)).map(item => String(item.id));
     
     // 隐藏主界面的 Tab 栏和设置按钮
     const appHeader = document.querySelector('.app-header');
@@ -2782,7 +2820,7 @@ function openSelectFood(mealType) {
         }
         // 修改头部布局
         menuHeaderRow.innerHTML = `
-            <span class="menu-title">选择菜谱</span>
+            <span class="menu-title">选择菜谱 (已选 ${selectedRecipeIds.length} 个)</span>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button class="select-mode-btn confirm-select-btn" style="background: #4a7c3f; color: white; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 12px;">确认添加</button>
                 <button class="select-mode-btn cancel-select-btn" style="background: #f0f0f0; color: #666; border: none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 12px;">✕ 取消</button>
@@ -2793,37 +2831,38 @@ function openSelectFood(mealType) {
         // 重新绑定追加按钮事件
         document.getElementById('addMenuBtn')?.addEventListener('click', openAddModal);
 
-
-        // 绑定确认按钮
-const confirmBtn = menuHeaderRow.querySelector('.confirm-select-btn');
-if (confirmBtn) {
-    confirmBtn.onclick = () => {
-        const selectedNames = menuItemsList.filter(item => selectedRecipeIds.includes(String(item.id))).map(item => item.name);
-        
-        // 根据 pendingMealType 判断是哪个餐次
-        let mealKey = '';
-        if (pendingMealType === '朝食') mealKey = 'mom_breakfast';
-        else if (pendingMealType === '昼食') mealKey = 'mom_lunch';
-        else if (pendingMealType === '夕食') mealKey = 'mom_dinner';
-        else if (pendingMealType === 'baby_breakfast') mealKey = 'baby_breakfast';
-        else if (pendingMealType === 'baby_lunch') mealKey = 'baby_lunch';
-        else if (pendingMealType === 'baby_dinner') mealKey = 'baby_dinner';
-        else mealKey = pendingMealType; // 兼容直接传 mealKey
-        
-        if (!MEAL_DATA[currentRecordDate]) MEAL_DATA[currentRecordDate] = {};
-        MEAL_DATA[currentRecordDate][mealKey] = selectedNames;
-        
-        // 重新计算使用次数
-        recalculateAllUsageCounts();
-        
-        saveDataToLocal();
-        exitSelectMode();
-        renderWeeklyList();
-        renderCalendar();
-        document.getElementById('recordModal').style.display = 'flex';
-        loadRecordData(currentRecordDate);
-    };
-}
+        // 绑定确认按钮 - 改为合并模式
+        const confirmBtn = menuHeaderRow.querySelector('.confirm-select-btn');
+        if (confirmBtn) {
+            confirmBtn.onclick = () => {
+                const selectedNames = menuItemsList.filter(item => selectedRecipeIds.includes(String(item.id))).map(item => item.name);
+                
+                // 获取当前已有的菜谱
+                if (!MEAL_DATA[currentRecordDate]) MEAL_DATA[currentRecordDate] = {};
+                const currentMeal = MEAL_DATA[currentRecordDate][pendingMealType] || [];
+                
+                // 合并：保留原有的 + 添加新选的（去重）
+                const mergedNames = [...currentMeal];
+                for (const name of selectedNames) {
+                    if (!mergedNames.includes(name)) {
+                        mergedNames.push(name);
+                    }
+                }
+                
+                // 更新数据
+                MEAL_DATA[currentRecordDate][pendingMealType] = mergedNames;
+                
+                // 重新计算使用次数
+                recalculateAllUsageCounts();
+                
+                saveDataToLocal();
+                exitSelectMode();
+                renderWeeklyList();
+                renderCalendar();
+                document.getElementById('recordModal').style.display = 'flex';
+                loadRecordData(currentRecordDate);
+            };
+        }
         
         // 绑定取消按钮
         const cancelBtn = menuHeaderRow.querySelector('.cancel-select-btn');
@@ -2835,18 +2874,6 @@ if (confirmBtn) {
         }
     }
     
-    // 获取当前餐次已有的菜谱ID
-    const targetListId = mealType === '朝食' ? 'recordBreakfastList' : 
-                        (mealType === '昼食' ? 'recordLunchList' : 'recordDinnerList');
-    const currentList = document.getElementById(targetListId);
-    const existingNames = [];
-    if (currentList) {
-        currentList.querySelectorAll('.meal-tag span:first-child').forEach(el => {
-            existingNames.push(el.innerText);
-        });
-    }
-    selectedRecipeIds = menuItemsList.filter(item => existingNames.includes(item.name)).map(item => String(item.id));
-    
     // 临时关闭记录弹窗
     document.getElementById('recordModal').style.display = 'none';
     
@@ -2857,6 +2884,193 @@ if (confirmBtn) {
     renderMenuManagement();
 }
 
+// 更新 renderMenuManagement 函数中的标题显示
+// 在 renderMenuManagement 函数中，找到这部分代码并修改：
+function renderMenuManagement() {
+    const container = document.getElementById('menuItemsContainer');
+    const total = menuItemsList.length;
+    document.getElementById('countAll').innerText = total;
+    document.getElementById('countMain').innerText = menuItemsList.filter(m => m.category === "主食").length;
+    document.getElementById('countSide').innerText = menuItemsList.filter(m => m.category === "蔬菜").length;
+    document.getElementById('countSoup').innerText = menuItemsList.filter(m => m.category === "蛋白质").length;
+    document.getElementById('countDessert').innerText = menuItemsList.filter(m => m.category === "油脂").length;
+    document.getElementById('countFruit').innerText = menuItemsList.filter(m => m.category === "水果").length;
+    
+    let filtered = currentMenuCat === 'all' ? menuItemsList : menuItemsList.filter(m => m.category === currentMenuCat);
+    
+    if (currentSearchKeyword.trim() !== '') {
+        const keyword = currentSearchKeyword.trim().toLowerCase();
+        filtered = filtered.filter(item => {
+            if (item.name.toLowerCase().includes(keyword)) return true;
+            if (item.ingredients && item.ingredients.toLowerCase().includes(keyword)) return true;
+            if (item.seasoning && item.seasoning.toLowerCase().includes(keyword)) return true;
+            if (item.method && item.method.toLowerCase().includes(keyword)) return true;
+            return false;
+        });
+    }
+    
+    if (currentSortMode === 'count') {
+        if (currentSortDirection === 'desc') {
+            filtered.sort((a, b) => (b.timesUsed || 0) - (a.timesUsed || 0));
+        } else {
+            filtered.sort((a, b) => (a.timesUsed || 0) - (b.timesUsed || 0));
+        }
+    } else if (currentSortMode === 'name') {
+        if (currentSortDirection === 'desc') {
+            filtered.sort((a, b) => b.name.localeCompare(a.name));
+        } else {
+            filtered.sort((a, b) => a.name.localeCompare(b.name));
+        }
+    }
+    
+    if(filtered.length === 0){ 
+        container.innerHTML = '<div style="text-align:center;padding:2rem;color:#aaa;">メニューがありません</div>'; 
+        return; 
+    }
+    
+    const isSelectMode = pendingMealType !== null;
+    
+    // 更新选择模式下的标题显示选中数量
+    if (isSelectMode) {
+        const menuHeaderRow = document.querySelector('#menuView .menu-header-row');
+        if (menuHeaderRow && menuHeaderRow.dataset.originalContent) {
+            const titleSpan = menuHeaderRow.querySelector('.menu-title');
+            if (titleSpan) {
+                titleSpan.innerText = `选择菜谱 (已选 ${selectedRecipeIds.length} 个)`;
+            }
+        }
+    }
+    
+    let html = '';
+    
+    filtered.forEach(item => { 
+        const isChecked = isSelectMode && selectedRecipeIds.includes(String(item.id));
+        
+        let thumbnailSrc = '';
+        if (item.localThumbnail) {
+            thumbnailSrc = item.localThumbnail;
+        } else if (item.localImage) {
+            thumbnailSrc = item.localImage;
+        } else if (item.image) {
+            thumbnailSrc = item.image;
+        }
+        
+        let lastCookText = item.lastCook || 'なし';
+        const isWished = wishItems && wishItems.some(w => w.name === item.name);
+        
+        html += '<div class="menu-simple-item ' + (isSelectMode ? 'select-mode-item' : '') + '" data-id="' + item.id + '" data-name="' + escapeHtml(item.name) + '" style="position: relative; display: flex; flex-direction: column; padding: 12px; cursor: pointer;">';
+        
+        if (isSelectMode) {
+            html += '<div class="menu-checkbox"><div class="check-mark ' + (isChecked ? 'checked' : '') + '">' + (isChecked ? '✓' : '') + '</div></div>';
+        }
+        
+        if (thumbnailSrc && thumbnailSrc !== '') {
+            let imgSrc = thumbnailSrc;
+            if (!thumbnailSrc.startsWith('data:image') && !thumbnailSrc.startsWith('blob:')) {
+                imgSrc = thumbnailSrc + '?t=' + Date.now();
+            }
+            html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; background: #f5f5f5;">';
+            html += '<img src="' + imgSrc + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div style=\\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f0f0f0;color:#ccc;font-size:10px;\\\'>❌</div>\'">';
+            html += '</div>';
+        } else {
+            html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 10px;">无图</div>';
+        }
+        
+        html += '<div style="padding-right: 48px;">';
+        html += '<div class="menu-simple-name">' + escapeHtml(item.name) + '</div>';
+        
+        let categoryClass = '';
+        if (item.category === '主食') categoryClass = 'tag-staple';
+        else if (item.category === '蔬菜') categoryClass = 'tag-veg';
+        else if (item.category === '蛋白质') categoryClass = 'tag-protein';
+        else if (item.category === '油脂') categoryClass = 'tag-fat';
+        else if (item.category === '水果') categoryClass = 'tag-fruit';
+        
+        html += '<div class="menu-simple-category ' + categoryClass + '" style="display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.6rem;">' + item.category + '</div>';
+        html += '<div class="menu-simple-detail" style="margin-top: 4px; white-space: nowrap;">前回: ' + escapeHtml(lastCookText) + ' ｜ 回数: ' + (item.timesUsed || 0) + '回</div>';
+        html += '</div>';
+        
+        html += '</div>';
+    });
+    
+    container.innerHTML = html;
+    
+    // 绑定收藏按钮事件（非选择模式时）
+    if (!isSelectMode) {
+        container.querySelectorAll('.wish-btn').forEach(btn => {
+            btn.removeEventListener('click', btn._wishHandler);
+            btn._wishHandler = (e) => {
+                e.stopPropagation();
+                const name = btn.getAttribute('data-name');
+                toggleWish(name, btn);
+            };
+            btn.addEventListener('click', btn._wishHandler);
+        });
+    }
+    
+    if (container._oldClickHandler) {
+        container.removeEventListener('click', container._oldClickHandler);
+    }
+    
+    if (isSelectMode) {
+        container._oldClickHandler = function(e) {
+            let target = e.target;
+            let menuItem = null;
+            while (target && target !== container) {
+                if (target.classList && target.classList.contains('menu-simple-item')) {
+                    menuItem = target;
+                    break;
+                }
+                target = target.parentElement;
+            }
+            if (menuItem) {
+                e.stopPropagation();
+                const id = String(menuItem.dataset.id);
+                const checkMark = menuItem.querySelector('.check-mark');
+                if (selectedRecipeIds.includes(id)) {
+                    selectedRecipeIds = selectedRecipeIds.filter(i => i !== id);
+                    if (checkMark) {
+                        checkMark.classList.remove('checked');
+                        checkMark.innerHTML = '';
+                    }
+                } else {
+                    selectedRecipeIds.push(id);
+                    if (checkMark) {
+                        checkMark.classList.add('checked');
+                        checkMark.innerHTML = '✓';
+                    }
+                }
+                // 更新头部显示的数量
+                const menuHeaderRow = document.querySelector('#menuView .menu-header-row');
+                if (menuHeaderRow && menuHeaderRow.dataset.originalContent) {
+                    const titleSpan = menuHeaderRow.querySelector('.menu-title');
+                    if (titleSpan) {
+                        titleSpan.innerText = `选择菜谱 (已选 ${selectedRecipeIds.length} 个)`;
+                    }
+                }
+            }
+        };
+        container.addEventListener('click', container._oldClickHandler);
+    } else {
+        container._oldClickHandler = function(e) {
+            let target = e.target;
+            let menuItem = null;
+            while (target && target !== container) {
+                if (target.classList && target.classList.contains('menu-simple-item')) {
+                    menuItem = target;
+                    break;
+                }
+                target = target.parentElement;
+            }
+            if (menuItem) {
+                e.stopPropagation();
+                const id = menuItem.dataset.id;
+                openEditModal(id);
+            }
+        };
+        container.addEventListener('click', container._oldClickHandler);
+    }
+}
 function exitSelectMode() {
     pendingMealType = null;
     selectedRecipeIds = [];
@@ -2888,13 +3102,30 @@ function updateMealListDisplay() {
 }
 
 
- function updateSelectedPanel(dateStr) {
+function updateSelectedPanel(dateStr) {
     const panel = document.getElementById('selectedDayMealPanel');
     const [y, m, d] = dateStr.split('-');
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     const date = new Date(dateStr);
     const wd = weekdays[date.getDay()];
     const dayData = MEAL_DATA[dateStr];
+    
+    // 定义分类顺序
+    const categoryOrder = ['主食', '蔬菜', '蛋白质', '油脂', '水果'];
+    
+    // 按分类顺序排序的函数
+    const sortByCategory = (foodNames) => {
+        if (!foodNames || foodNames.length === 0) return [];
+        return [...foodNames].sort((a, b) => {
+            const recipeA = menuItemsList.find(r => r.name === a);
+            const recipeB = menuItemsList.find(r => r.name === b);
+            const catA = recipeA ? recipeA.category : '';
+            const catB = recipeB ? recipeB.category : '';
+            const indexA = categoryOrder.indexOf(catA);
+            const indexB = categoryOrder.indexOf(catB);
+            return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+        });
+    };
     
     let html = `<div style="font-weight:500; margin-bottom:8px; font-size:0.75rem; color:#666;">${parseInt(m)}/${parseInt(d)} (${wd}) 的食谱</div>`;
     
@@ -2922,18 +3153,21 @@ function updateMealListDisplay() {
     // 早餐
     let momBreakfast = dayData && dayData.mom_breakfast ? dayData.mom_breakfast : [];
     let filteredMomBreakfast = filterByCategory(momBreakfast);
+    let sortedMomBreakfast = sortByCategory(filteredMomBreakfast);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">早餐</span>`;
-html += `<button class="edit-mom-breakfast-btn" data-date="${dateStr}" data-meal="mom_breakfast" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-mom-breakfast-btn" data-date="${dateStr}" data-meal="mom_breakfast" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredMomBreakfast.length > 0) {
-        filteredMomBreakfast.forEach(food => {
+    if (sortedMomBreakfast.length > 0) {
+        sortedMomBreakfast.forEach(food => {
             const tagClass = getTagClass(food);
             html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
@@ -2945,18 +3179,21 @@ html += `<button class="edit-mom-breakfast-btn" data-date="${dateStr}" data-meal
     // 午餐 - 大人
     let momLunch = dayData && dayData.mom_lunch ? dayData.mom_lunch : [];
     let filteredMomLunch = filterByCategory(momLunch);
+    let sortedMomLunch = sortByCategory(filteredMomLunch);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">午餐</span>`;
-html += `<button class="edit-mom-lunch-btn" data-date="${dateStr}" data-meal="mom_lunch" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-mom-lunch-btn" data-date="${dateStr}" data-meal="mom_lunch" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredMomLunch.length > 0) {
-        filteredMomLunch.forEach(food => {
+    if (sortedMomLunch.length > 0) {
+        sortedMomLunch.forEach(food => {
             const tagClass = getTagClass(food);
             html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
@@ -2968,18 +3205,21 @@ html += `<button class="edit-mom-lunch-btn" data-date="${dateStr}" data-meal="mo
     // 晚餐 - 大人
     let momDinner = dayData && dayData.mom_dinner ? dayData.mom_dinner : [];
     let filteredMomDinner = filterByCategory(momDinner);
+    let sortedMomDinner = sortByCategory(filteredMomDinner);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
     html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #eee;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #333;">晚餐</span>`;
-html += `<button class="edit-mom-dinner-btn" data-date="${dateStr}" data-meal="mom_dinner" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-mom-dinner-btn" data-date="${dateStr}" data-meal="mom_dinner" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredMomDinner.length > 0) {
-        filteredMomDinner.forEach(food => {
+    if (sortedMomDinner.length > 0) {
+        sortedMomDinner.forEach(food => {
             const tagClass = getTagClass(food);
             html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
@@ -2992,20 +3232,23 @@ html += `<button class="edit-mom-dinner-btn" data-date="${dateStr}" data-meal="m
     // 早餐 - 宝宝
     let babyBreakfast = dayData && dayData.baby_breakfast ? dayData.baby_breakfast : [];
     let filteredBabyBreakfast = filterByCategory(babyBreakfast);
+    let sortedBabyBreakfast = sortByCategory(filteredBabyBreakfast);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
-    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0; ">`;
+    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #ff9800;">👧🏻 早餐</span>`;
-html += `<button class="edit-baby-breakfast-btn" data-date="${dateStr}" data-meal="baby_breakfast" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-baby-breakfast-btn" data-date="${dateStr}" data-meal="baby_breakfast" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredBabyBreakfast.length > 0) {
-        filteredBabyBreakfast.forEach(food => {
+    if (sortedBabyBreakfast.length > 0) {
+        sortedBabyBreakfast.forEach(food => {
             const tagClass = getTagClass(food);
-html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
+            html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
     } else {
         html += `<span style="font-size: 0.7rem; color: #ccc;">无记录</span>`;
@@ -3015,20 +3258,23 @@ html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" 
     // 午餐 - 宝宝
     let babyLunch = dayData && dayData.baby_lunch ? dayData.baby_lunch : [];
     let filteredBabyLunch = filterByCategory(babyLunch);
+    let sortedBabyLunch = sortByCategory(filteredBabyLunch);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
-    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0; ">`;
+    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #ff9800;">👧🏻 午餐</span>`;
-html += `<button class="edit-baby-lunch-btn" data-date="${dateStr}" data-meal="baby_lunch" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-baby-lunch-btn" data-date="${dateStr}" data-meal="baby_lunch" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredBabyLunch.length > 0) {
-        filteredBabyLunch.forEach(food => {
+    if (sortedBabyLunch.length > 0) {
+        sortedBabyLunch.forEach(food => {
             const tagClass = getTagClass(food);
-            html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">👧🏻 ${escapeHtml(food)}</span>`;
+            html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
     } else {
         html += `<span style="font-size: 0.7rem; color: #ccc;">无记录</span>`;
@@ -3038,20 +3284,23 @@ html += `<button class="edit-baby-lunch-btn" data-date="${dateStr}" data-meal="b
     // 晚餐 - 宝宝
     let babyDinner = dayData && dayData.baby_dinner ? dayData.baby_dinner : [];
     let filteredBabyDinner = filterByCategory(babyDinner);
+    let sortedBabyDinner = sortByCategory(filteredBabyDinner);
+    
     html += `<div style="background: white; border: 1px solid #eee; border-radius: 12px; margin-bottom: 12px; overflow: hidden;">`;
-    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0; ">`;
+    html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #FFF3E0;">`;
     html += `<span style="font-size: 0.75rem; font-weight: 600; color: #ff9800;">👧🏻 晚餐</span>`;
-html += `<button class="edit-baby-dinner-btn" data-date="${dateStr}" data-meal="baby_dinner" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
-        <path d="M15 5l4 4"/>
-    </svg>
-</button>`;    html += `</div>`;
+    html += `<button class="edit-baby-dinner-btn" data-date="${dateStr}" data-meal="baby_dinner" style="background: none; border: none; cursor: pointer; padding: 4px 6px; display: flex; align-items: center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3l4 4L7 21H3v-4L17 3z"/>
+            <path d="M15 5l4 4"/>
+        </svg>
+    </button>`;
+    html += `</div>`;
     html += `<div style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">`;
-    if (filteredBabyDinner.length > 0) {
-        filteredBabyDinner.forEach(food => {
+    if (sortedBabyDinner.length > 0) {
+        sortedBabyDinner.forEach(food => {
             const tagClass = getTagClass(food);
-            html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">👧🏻 ${escapeHtml(food)}</span>`;
+            html += `<span class="cal-meal-tag ${tagClass}" data-food="${escapeHtml(food)}" style="display: inline-block; border-radius: 16px; padding: 4px 10px; font-size: 0.7rem; cursor: pointer;">${escapeHtml(food)}</span>`;
         });
     } else {
         html += `<span style="font-size: 0.7rem; color: #ccc;">无记录</span>`;
@@ -3065,10 +3314,6 @@ html += `<button class="edit-baby-dinner-btn" data-date="${dateStr}" data-meal="
         tag.addEventListener('click', (e) => {
             e.stopPropagation();
             let foodName = tag.getAttribute('data-food');
-            // 如果菜谱名前面有 👧🏻，去掉它
-            if (foodName && foodName.startsWith('👧🏻')) {
-                foodName = foodName.replace('👧🏻', '').trim();
-            }
             showRecipeDetail(foodName);
         });
     });
@@ -4972,8 +5217,7 @@ function stopDownloadSpin() {
         svg.style.stroke = '#888';
     }
 }
-
-// 上传到 Gist（带旋转效果）
+// 修复上传函数
 async function uploadToGistWithSpin() {
     console.log('🔍 [手动上传] 开始检查配置...');
     const { token, gistId, filename } = loadGithubConfig();
@@ -4988,12 +5232,16 @@ async function uploadToGistWithSpin() {
     startUploadSpin();
     showSyncToast('☁️ 正在上传...', false);
     
+    // 导出完整数据（包括菜单、记录、收藏、购物清单）
     const exportData = {
-        version: "1.0",
+        version: "2.0",
         exportDate: new Date().toISOString(),
         mealData: MEAL_DATA,
         menuItems: menuItemsList,
-        nextId: nextId
+        wishItems: wishItems,
+        shoppingItems: shoppingItems,
+        nextId: nextId,
+        nextWishId: nextWishId
     };
     const content = JSON.stringify(exportData, null, 2);
     console.log(`📦 [手动上传] 数据大小: ${(content.length / 1024).toFixed(1)} KB`);
@@ -5001,23 +5249,26 @@ async function uploadToGistWithSpin() {
     try {
         console.log('🔄 [手动上传] 获取 Gist 文件信息...');
         let sha = '';
+        
+        // 先获取现有文件信息（获取 SHA）
         const getRes = await fetch(`https://api.github.com/gists/${gistId}`, {
-            headers: { 'Authorization': `token ${token}` }
+            headers: { 
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
         
         if (getRes.ok) {
             const gistData = await getRes.json();
             console.log('✅ [手动上传] 获取 Gist 成功');
             if (gistData.files && gistData.files[filename]) {
-    sha = gistData.files[filename].sha;
-    if (sha) {
-        console.log(`📄 [静默同步] 文件 SHA: ${sha.substring(0, 8)}...`);
-    } else {
-        console.log(`📄 [静默同步] 文件存在，但无 SHA（新文件）`);
-    }
-} else {
-    console.log(`📄 [静默同步] 文件 ${filename} 不存在，将创建新文件`);
-}
+                sha = gistData.files[filename].sha;
+                if (sha) {
+                    console.log(`📄 [手动上传] 文件 SHA: ${sha.substring(0, 8)}...`);
+                }
+            } else {
+                console.log(`📄 [手动上传] 文件 ${filename} 不存在，将创建新文件`);
+            }
         } else {
             console.error(`❌ [手动上传] 获取 Gist 失败: ${getRes.status}`);
             throw new Error(`获取 Gist 失败: ${getRes.status}`);
@@ -5028,11 +5279,15 @@ async function uploadToGistWithSpin() {
             method: 'PATCH',
             headers: {
                 'Authorization': `token ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
                 files: {
-                    [filename]: { content: content, sha: sha || undefined }
+                    [filename]: { 
+                        content: content,
+                        sha: sha || undefined 
+                    }
                 }
             })
         });
@@ -5056,6 +5311,8 @@ async function uploadToGistWithSpin() {
         stopUploadSpin();
     }
 }
+
+// 修复恢复函数
 async function restoreFromGistWithSpin() {
     console.log('🔍 [手动恢复] 开始检查配置...');
     const { token, gistId, filename } = loadGithubConfig();
@@ -5078,12 +5335,11 @@ async function restoreFromGistWithSpin() {
     try {
         console.log(`🔄 [手动恢复] 获取 Gist: ${gistId}`);
         
-        // ✅ 添加禁用缓存的请求头
+        // 移除可能引起 CORS 问题的头
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
             headers: { 
                 'Authorization': `token ${token}`,
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
+                'Accept': 'application/vnd.github.v3+json'
             }
         });
         
@@ -5106,8 +5362,9 @@ async function restoreFromGistWithSpin() {
         
         console.log('云端同步时间:', imported.exportDate);
         console.log('云端菜谱数量:', imported.menuItems?.length);
+        console.log('云端记录天数:', Object.keys(imported.mealData || {}).length);
         
-        // ✅ 直接覆盖，不做任何合并比较
+        // 恢复所有数据
         if (imported.mealData) {
             MEAL_DATA = imported.mealData;
             console.log(`✅ [手动恢复] 加载了 ${Object.keys(MEAL_DATA).length} 天的记录`);
@@ -5115,20 +5372,30 @@ async function restoreFromGistWithSpin() {
         if (imported.menuItems) {
             menuItemsList = imported.menuItems;
             console.log(`✅ [手动恢复] 加载了 ${menuItemsList.length} 个菜谱`);
-            console.log('菜谱列表:', menuItemsList.map(m => m.name));
+        }
+        if (imported.wishItems) {
+            wishItems = imported.wishItems;
+            console.log(`✅ [手动恢复] 加载了 ${wishItems.length} 个收藏`);
+        }
+        if (imported.shoppingItems) {
+            shoppingItems = imported.shoppingItems;
+            console.log(`✅ [手动恢复] 加载了 ${shoppingItems.length} 个购物项`);
         }
         if (imported.nextId) nextId = imported.nextId;
+        if (imported.nextWishId) nextWishId = imported.nextWishId;
         
-        // ✅ 重新计算使用次数
+        // 重新计算使用次数
         recalculateAllUsageCounts();
         
-        // ✅ 保存到本地
+        // 保存到本地
         saveDataToLocal();
         
-        // ✅ 强制刷新界面
+        // 刷新所有界面
         renderWeeklyList();
         renderCalendar();
         renderMenuManagement();
+        renderWishManagement();
+        if (typeof renderShoppingList === 'function') renderShoppingList();
         
         console.log('✅ [手动恢复] 恢复成功！时间:', new Date().toLocaleTimeString());
         showSyncToast('✅ 恢复成功', false);
@@ -6111,13 +6378,7 @@ document.getElementById('nextWeekBtn')?.addEventListener('click', nextWeek);
     }, 100);
 
 
-  setTimeout(function() {
-    autoRestoreFromCloud().finally(() => {
-        // ✅ 合并完成后允许后续自动同步
-        isFirstLoad = false;
-        console.log('🏁 初始化完成，现在可以自动同步了');
-    });
-}, 500);
+
 initIngredientModal();
 initAutoResizeTextareas();
 }
