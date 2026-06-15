@@ -4529,26 +4529,34 @@ function saveDataToLocal() {
 }
 
 
-// ✅ 在这里添加新函数（放在这两个函数之间或旁边都可以）
 function recalculateAllUsageCounts() {
-    // 先重置所有菜谱的使用次数为 0
+    console.log('🔄 重新计算使用次数...');
+    
+    // 重置所有菜谱
     menuItemsList.forEach(recipe => {
         recipe.timesUsed = 0;
         recipe.lastCook = null;
     });
     
-    // 遍历所有日期的记录，统计每个菜谱出现的次数和最后使用日期
+    // 遍历所有记录
     for (const dateStr in MEAL_DATA) {
         const record = MEAL_DATA[dateStr];
-        const meals = [record.breakfast, record.lunch, record.dinner];
+        if (!record) continue;
         
-        meals.forEach(mealItems => {
+        // 支持新旧两种格式
+        const mealFields = [
+            'mom_breakfast', 'mom_lunch', 'mom_dinner',
+            'baby_breakfast', 'baby_lunch', 'baby_dinner',
+            'breakfast', 'lunch', 'dinner'  // 兼容旧格式
+        ];
+        
+        mealFields.forEach(field => {
+            const mealItems = record[field];
             if (mealItems && Array.isArray(mealItems)) {
                 mealItems.forEach(recipeName => {
                     const recipe = menuItemsList.find(r => r.name === recipeName);
                     if (recipe) {
                         recipe.timesUsed = (recipe.timesUsed || 0) + 1;
-                        // 更新最后使用日期（取最近的日期）
                         if (!recipe.lastCook || dateStr > recipe.lastCook) {
                             recipe.lastCook = dateStr;
                         }
@@ -4558,17 +4566,13 @@ function recalculateAllUsageCounts() {
         });
     }
     
-    // 对于从未使用过的菜谱，设置默认值
     menuItemsList.forEach(recipe => {
-        if (!recipe.lastCook) {
-            recipe.lastCook = 'なし';
-        }
-        if (!recipe.timesUsed) {
-            recipe.timesUsed = 0;
-        }
+        if (!recipe.lastCook) recipe.lastCook = 'なし';
+        if (!recipe.timesUsed) recipe.timesUsed = 0;
     });
+    
+    console.log('✅ 使用次数计算完成');
 }
-
 
 function loadDataFromLocal() {
     const raw = localStorage.getItem(PAGE_ID);
@@ -5980,22 +5984,23 @@ function initIngredientModal() {
     const clearBtn = document.getElementById('clearIngredientCheckedBtn');
     const copyBtn = document.getElementById('copyIngredientListBtn');
     
+    // ✅ 添加安全检查：只有当元素存在时才绑定事件
     if (openBtn) {
         openBtn.onclick = () => {
-            modal.style.display = 'flex';
-            renderIngredientModal(weekSelect ? weekSelect.value : 'current');
+            if (modal) modal.style.display = 'flex';
+            if (weekSelect) renderIngredientModal(weekSelect.value);
         };
     }
     
-    if (closeBtn) {
+    if (closeBtn && modal) {
         closeBtn.onclick = () => {
             modal.style.display = 'none';
         };
     }
     
-    if (refreshBtn) {
+    if (refreshBtn && weekSelect) {
         refreshBtn.onclick = () => {
-            renderIngredientModal(weekSelect ? weekSelect.value : 'current');
+            renderIngredientModal(weekSelect.value);
         };
     }
     
@@ -6020,14 +6025,14 @@ function initIngredientModal() {
     }
     
     // 点击背景关闭
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
+    if (modal) {
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+    }
 }
-
-
 
 // ========== 手动购物清单功能 ==========
 let shoppingItems = []; // { id, name, checked, order }
@@ -6162,7 +6167,30 @@ function closeImagePreview() {
     }
 }
 
+// 自动调整 textarea 高度的辅助函数
+function autoResizeTextarea(textarea) {
+    if (!textarea) return;
+    // 重置高度为 auto，让浏览器计算实际需要的高度
+    textarea.style.height = 'auto';
+    // 设置为内容实际高度（无滚动条）
+    textarea.style.height = textarea.scrollHeight + 'px';
+}
 
+// 初始化所有自动调整的textarea
+function initAutoResizeTextareas() {
+    const textareas = ['editRecipeIngredients', 'editRecipeSeasoning', 'editRecipeMethod'];
+    textareas.forEach(id => {
+        const ta = document.getElementById(id);
+        if (ta) {
+            // 设置初始高度
+            autoResizeTextarea(ta);
+            // 绑定输入事件
+            ta.addEventListener('input', function() {
+                autoResizeTextarea(this);
+            });
+        }
+    });
+}
 // 初始化所有自动调整的textarea
 function initAutoResizeTextareas() {
     const textareas = ['editRecipeIngredients', 'editRecipeSeasoning', 'editRecipeMethod'];
@@ -6202,6 +6230,39 @@ document.addEventListener('input', function(e) {
     }
 });
 function init(){
+
+
+    // ========== 数据迁移：将旧格式转换为新格式 ==========
+    for (const dateStr in MEAL_DATA) {
+        const record = MEAL_DATA[dateStr];
+        const newRecord = {};
+        let needsFix = false;
+        
+        if (record.breakfast) {
+            newRecord.mom_breakfast = record.breakfast;
+            needsFix = true;
+        }
+        if (record.lunch) {
+            newRecord.mom_lunch = record.lunch;
+            needsFix = true;
+        }
+        if (record.dinner) {
+            newRecord.mom_dinner = record.dinner;
+            needsFix = true;
+        }
+        
+        if (record.mom_breakfast) newRecord.mom_breakfast = record.mom_breakfast;
+        if (record.mom_lunch) newRecord.mom_lunch = record.mom_lunch;
+        if (record.mom_dinner) newRecord.mom_dinner = record.mom_dinner;
+        if (record.baby_breakfast) newRecord.baby_breakfast = record.baby_breakfast;
+        if (record.baby_lunch) newRecord.baby_lunch = record.baby_lunch;
+        if (record.baby_dinner) newRecord.baby_dinner = record.baby_dinner;
+        
+        if (needsFix) {
+            MEAL_DATA[dateStr] = newRecord;
+        }
+    }
+    // ========== 数据迁移结束 ==========
 // 图片预览弹窗关闭
 const closePreviewBtn = document.querySelector('.close-preview-modal');
 const previewModal = document.getElementById('imagePreviewModal');
