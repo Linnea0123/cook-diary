@@ -4573,31 +4573,82 @@ function addToWish() {
     document.getElementById('recipeEditModalV2').style.display = 'flex';
 }
 function saveDataToLocal() {
+    // ========== 创建干净的数据副本，不包含任何 Base64 ==========
+    const cleanMenuItems = menuItemsList.map(item => {
+        const clean = { ...item };
+        // 删除所有 Base64 图片
+        if (clean.localThumbnail && clean.localThumbnail.startsWith('data:')) {
+            delete clean.localThumbnail;
+        }
+        if (clean.localImage && clean.localImage.startsWith('data:')) {
+            delete clean.localImage;
+        }
+        if (clean.methodImages && Array.isArray(clean.methodImages)) {
+            clean.methodImages = clean.methodImages.filter(img => !img.startsWith('data:'));
+        }
+        // 保留 CDN 链接 (https://)
+        return clean;
+    });
+    
+    const cleanWishItems = wishItems.map(item => {
+        const clean = { ...item };
+        if (clean.localThumbnail && clean.localThumbnail.startsWith('data:')) {
+            delete clean.localThumbnail;
+        }
+        if (clean.localImage && clean.localImage.startsWith('data:')) {
+            delete clean.localImage;
+        }
+        if (clean.methodImages && Array.isArray(clean.methodImages)) {
+            clean.methodImages = clean.methodImages.filter(img => !img.startsWith('data:'));
+        }
+        return clean;
+    });
+    
     const fullData = {
         pageId: PAGE_ID,
         version: "2.0",
         lastUpdated: new Date().toISOString(),
         mealData: MEAL_DATA,
-        menuItems: menuItemsList,
-        wishItems: wishItems,     
-          shoppingItems: shoppingItems, 
-        nextWishId: nextWishId ,   
+        menuItems: cleanMenuItems,
+        wishItems: cleanWishItems,
+        shoppingItems: shoppingItems || [],
+        nextWishId: nextWishId,
         nextId: nextId
     };
-    localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
     
-    // ✅ 首次加载时不触发同步
-    if (isFirstLoad) {
-        console.log('📦 首次加载，跳过自动同步');
-        return;
+    try {
+        localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
+        const size = new Blob([JSON.stringify(fullData)]).size;
+        console.log(`💾 数据已保存: ${(size / 1024 / 1024).toFixed(2)} MB`);
+    } catch(e) {
+        console.error('❌ 保存失败:', e);
+        // 如果还是失败，进一步压缩
+        if (e.name === 'QuotaExceededError') {
+            console.log('⚠️ 数据过大，尝试压缩...');
+            // 删除所有图片字段
+            fullData.menuItems.forEach(item => {
+                delete item.localImage;
+                delete item.localThumbnail;
+                delete item.methodImages;
+            });
+            fullData.wishItems.forEach(item => {
+                delete item.localImage;
+                delete item.localThumbnail;
+                delete item.methodImages;
+            });
+            localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
+            console.log('✅ 压缩后保存成功（图片链接已删除）');
+        }
     }
     
-    if (window._syncTimer) clearTimeout(window._syncTimer);
-    window._syncTimer = setTimeout(() => {
-        silentSyncToGist();
-    }, 5000);
+    // 自动同步到云端
+    if (!isFirstLoad) {
+        if (window._syncTimer) clearTimeout(window._syncTimer);
+        window._syncTimer = setTimeout(() => {
+            silentSyncToGist();
+        }, 5000);
+    }
 }
-
 
 function recalculateAllUsageCounts() {
     console.log('🔄 重新计算使用次数...');
@@ -5400,6 +5451,7 @@ async function restoreFromGistWithSpin() {
     showSyncToast('☁️ 正在恢复...', false);
     
     try {
+        console.log(`🔄 获取 Gist: ${gistId}`);
         const res = await fetch(`https://api.github.com/gists/${gistId}`, {
             headers: { 
                 'Authorization': `token ${token}`,
@@ -5418,56 +5470,84 @@ async function restoreFromGistWithSpin() {
         }
         
         const imported = JSON.parse(fileContent);
+        console.log(`📦 云端数据大小: ${(fileContent.length / 1024 / 1024).toFixed(2)} MB`);
         
-        // ========== ⭐ 关键修改：删除所有 Base64 图片 ==========
+        // ========== ⭐ 强制过滤所有 Base64 图片 ==========
         console.log('🧹 过滤云端数据中的 Base64 图片...');
         let removedCount = 0;
         
+        // 过滤菜单项
         if (imported.menuItems) {
             imported.menuItems.forEach(item => {
-                // 删除 Base64 缩略图
-                if (item.localThumbnail?.startsWith('data:')) {
+                // 删除所有 Base64
+                if (item.localThumbnail && item.localThumbnail.startsWith('data:')) {
                     delete item.localThumbnail;
                     removedCount++;
                 }
-                // 删除 Base64 原图
-                if (item.localImage?.startsWith('data:')) {
+                if (item.localImage && item.localImage.startsWith('data:')) {
                     delete item.localImage;
                     removedCount++;
                 }
-                // 删除 Base64 做法图片
                 if (item.methodImages && Array.isArray(item.methodImages)) {
-                    item.methodImages = item.methodImages.filter(img => 
-                        !img.startsWith('data:')
-                    );
+                    const before = item.methodImages.length;
+                    item.methodImages = item.methodImages.filter(img => {
+                        if (img && !img.startsWith('data:')) return true;
+                        removedCount++;
+                        return false;
+                    });
+                }
+                // 确保 CDN 链接保留
+                if (item.localImage && item.localImage.startsWith('https://')) {
+                    // 保留
                 }
             });
-            console.log(`✅ 过滤了 ${removedCount} 个 Base64 图片`);
         }
         
-        // 同样处理收藏
+        // 过滤收藏
         if (imported.wishItems) {
             imported.wishItems.forEach(item => {
-                if (item.localThumbnail?.startsWith('data:')) delete item.localThumbnail;
-                if (item.localImage?.startsWith('data:')) delete item.localImage;
+                if (item.localThumbnail && item.localThumbnail.startsWith('data:')) {
+                    delete item.localThumbnail;
+                    removedCount++;
+                }
+                if (item.localImage && item.localImage.startsWith('data:')) {
+                    delete item.localImage;
+                    removedCount++;
+                }
+                if (item.methodImages && Array.isArray(item.methodImages)) {
+                    item.methodImages = item.methodImages.filter(img => {
+                        if (img && !img.startsWith('data:')) return true;
+                        removedCount++;
+                        return false;
+                    });
+                }
             });
         }
         
-        // ========== 检查数据大小 ==========
-        const dataSize = new Blob([JSON.stringify(imported)]).size;
-        console.log(`📦 过滤后数据大小: ${(dataSize / 1024 / 1024).toFixed(2)} MB`);
+        console.log(`✅ 过滤了 ${removedCount} 个 Base64 图片`);
         
-        if (dataSize > 4.5 * 1024 * 1024) {
-            console.warn('⚠️ 数据仍然较大，继续过滤...');
-            // 如果还是太大，删除所有图片字段
+        // ========== 检查过滤后的大小 ==========
+        const filteredContent = JSON.stringify(imported);
+        const filteredSize = new Blob([filteredContent]).size;
+        console.log(`📦 过滤后数据大小: ${(filteredSize / 1024 / 1024).toFixed(2)} MB`);
+        
+        if (filteredSize > 4.5 * 1024 * 1024) {
+            console.warn('⚠️ 数据仍然较大，尝试进一步压缩...');
+            // 删除所有图片字段
             imported.menuItems.forEach(item => {
                 delete item.localImage;
                 delete item.localThumbnail;
                 delete item.methodImages;
             });
+            imported.wishItems.forEach(item => {
+                delete item.localImage;
+                delete item.localThumbnail;
+                delete item.methodImages;
+            });
+            console.log('✅ 已删除所有图片字段');
         }
         
-        // ========== 恢复数据 ==========
+        // ========== 恢复到内存 ==========
         if (imported.mealData) MEAL_DATA = imported.mealData;
         if (imported.menuItems) menuItemsList = imported.menuItems;
         if (imported.wishItems) wishItems = imported.wishItems;
@@ -5475,26 +5555,32 @@ async function restoreFromGistWithSpin() {
         if (imported.nextId) nextId = imported.nextId;
         if (imported.nextWishId) nextWishId = imported.nextWishId;
         
+        // 重新计算使用次数
         recalculateAllUsageCounts();
+        
+        // ⭐ 使用新的保存函数（自动过滤 Base64）
         saveDataToLocal();
         
+        // 刷新界面
         renderWeeklyList();
         renderCalendar();
         renderMenuManagement();
         renderWishManagement();
         if (typeof renderShoppingList === 'function') renderShoppingList();
         
+        console.log('✅ 恢复成功！');
         showSyncToast('✅ 恢复成功', false);
-        alert('✅ 恢复成功！数据已从云端同步（Base64 图片已过滤，只保留 CDN 链接）');
+        alert('✅ 恢复成功！数据已从云端同步（所有 Base64 图片已过滤）');
         
     } catch(e) {
-        console.error('❌ [手动恢复] 失败:', e.message);
+        console.error('❌ 恢复失败:', e.message);
         showSyncToast('❌ 恢复失败: ' + e.message, true);
         alert('❌ 恢复失败: ' + e.message);
     } finally {
         stopDownloadSpin();
     }
 }
+
 // 智能解析菜谱内容（保留原始格式，不拆分空格）
 function parseRecipeContent(content) {
     const result = {
