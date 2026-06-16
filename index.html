@@ -4573,37 +4573,52 @@ function addToWish() {
     document.getElementById('recipeEditModalV2').style.display = 'flex';
 }
 function saveDataToLocal() {
-    // ========== 创建干净的数据副本，不包含任何 Base64 ==========
+    console.log('💾 保存数据（自动过滤 Base64）');
+    
+    // ========== 1. 清理菜单项中的 Base64 ==========
     const cleanMenuItems = menuItemsList.map(item => {
         const clean = { ...item };
-        // 删除所有 Base64 图片
-        if (clean.localThumbnail && clean.localThumbnail.startsWith('data:')) {
+        // 删除 Base64 缩略图
+        if (clean.localThumbnail && typeof clean.localThumbnail === 'string' && clean.localThumbnail.startsWith('data:')) {
             delete clean.localThumbnail;
         }
-        if (clean.localImage && clean.localImage.startsWith('data:')) {
+        // 删除 Base64 原图
+        if (clean.localImage && typeof clean.localImage === 'string' && clean.localImage.startsWith('data:')) {
             delete clean.localImage;
         }
+        // 删除 Base64 做法图片
         if (clean.methodImages && Array.isArray(clean.methodImages)) {
-            clean.methodImages = clean.methodImages.filter(img => !img.startsWith('data:'));
+            clean.methodImages = clean.methodImages.filter(img => {
+                if (typeof img === 'string' && img.startsWith('data:')) {
+                    return false;
+                }
+                return true;
+            });
         }
-        // 保留 CDN 链接 (https://)
         return clean;
     });
     
+    // ========== 2. 清理收藏中的 Base64 ==========
     const cleanWishItems = wishItems.map(item => {
         const clean = { ...item };
-        if (clean.localThumbnail && clean.localThumbnail.startsWith('data:')) {
+        if (clean.localThumbnail && typeof clean.localThumbnail === 'string' && clean.localThumbnail.startsWith('data:')) {
             delete clean.localThumbnail;
         }
-        if (clean.localImage && clean.localImage.startsWith('data:')) {
+        if (clean.localImage && typeof clean.localImage === 'string' && clean.localImage.startsWith('data:')) {
             delete clean.localImage;
         }
         if (clean.methodImages && Array.isArray(clean.methodImages)) {
-            clean.methodImages = clean.methodImages.filter(img => !img.startsWith('data:'));
+            clean.methodImages = clean.methodImages.filter(img => {
+                if (typeof img === 'string' && img.startsWith('data:')) {
+                    return false;
+                }
+                return true;
+            });
         }
         return clean;
     });
     
+    // ========== 3. 组装数据 ==========
     const fullData = {
         pageId: PAGE_ID,
         version: "2.0",
@@ -4616,16 +4631,15 @@ function saveDataToLocal() {
         nextId: nextId
     };
     
+    // ========== 4. 保存到 localStorage ==========
     try {
-        localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
-        const size = new Blob([JSON.stringify(fullData)]).size;
-        console.log(`💾 数据已保存: ${(size / 1024 / 1024).toFixed(2)} MB`);
-    } catch(e) {
-        console.error('❌ 保存失败:', e);
-        // 如果还是失败，进一步压缩
-        if (e.name === 'QuotaExceededError') {
-            console.log('⚠️ 数据过大，尝试压缩...');
-            // 删除所有图片字段
+        const jsonStr = JSON.stringify(fullData);
+        const size = new Blob([jsonStr]).size;
+        console.log(`📦 保存数据: ${(size / 1024 / 1024).toFixed(2)} MB`);
+        
+        // 如果数据大于 4.5MB，删除所有图片字段
+        if (size > 4.5 * 1024 * 1024) {
+            console.warn('⚠️ 数据过大，删除所有图片字段...');
             fullData.menuItems.forEach(item => {
                 delete item.localImage;
                 delete item.localThumbnail;
@@ -4636,20 +4650,63 @@ function saveDataToLocal() {
                 delete item.localThumbnail;
                 delete item.methodImages;
             });
-            localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
-            console.log('✅ 压缩后保存成功（图片链接已删除）');
         }
+        
+        localStorage.setItem(PAGE_ID, JSON.stringify(fullData));
+        console.log('✅ 保存成功');
+    } catch(e) {
+        console.error('❌ 保存失败:', e);
+        // 终极方案：只保存文本数据
+        console.log('⚠️ 使用终极方案：只保存文本数据');
+        const minimalData = {
+            pageId: PAGE_ID,
+            version: "2.0",
+            mealData: MEAL_DATA,
+            menuItems: menuItemsList.map(item => ({
+                id: item.id,
+                name: item.name,
+                category: item.category,
+                method: item.method || '',
+                recipeUrl: item.recipeUrl || '',
+                ingredients: item.ingredients || '',
+                seasoning: item.seasoning || '',
+                price: item.price || '',
+                buyNote: item.buyNote || '',
+                timesUsed: item.timesUsed || 0,
+                lastCook: item.lastCook || 'なし',
+                registered: item.registered || new Date().toISOString().slice(0,10)
+            })),
+            wishItems: wishItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                category: item.category,
+                method: item.method || '',
+                recipeUrl: item.recipeUrl || '',
+                ingredients: item.ingredients || '',
+                seasoning: item.seasoning || '',
+                price: item.price || '',
+                buyNote: item.buyNote || '',
+                wishDate: item.wishDate || new Date().toISOString()
+            })),
+            shoppingItems: shoppingItems || [],
+            nextWishId: nextWishId,
+            nextId: nextId
+        };
+        localStorage.setItem(PAGE_ID, JSON.stringify(minimalData));
+        console.log('✅ 终极方案保存成功');
     }
     
-    // 自动同步到云端
-    if (!isFirstLoad) {
-        if (window._syncTimer) clearTimeout(window._syncTimer);
-        window._syncTimer = setTimeout(() => {
-            silentSyncToGist();
-        }, 5000);
+    // ========== 5. 自动同步到云端 ==========
+    if (isFirstLoad) {
+        console.log('📦 首次加载，跳过自动同步');
+        return;
     }
+    
+    if (window._syncTimer) clearTimeout(window._syncTimer);
+    window._syncTimer = setTimeout(() => {
+        silentSyncToGist();
+    }, 5000);
 }
-
 function recalculateAllUsageCounts() {
     console.log('🔄 重新计算使用次数...');
     
