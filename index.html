@@ -2998,17 +2998,22 @@ function renderMenuManagement() {
             html += '<div class="menu-checkbox"><div class="check-mark ' + (isChecked ? 'checked' : '') + '">' + (isChecked ? '✓' : '') + '</div></div>';
         }
         
-        if (thumbnailSrc && thumbnailSrc !== '') {
-            let imgSrc = thumbnailSrc;
-            if (!thumbnailSrc.startsWith('data:image') && !thumbnailSrc.startsWith('blob:')) {
-                imgSrc = thumbnailSrc + '?t=' + Date.now();
-            }
-            html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; background: #f5f5f5;">';
-            html += '<img src="' + imgSrc + '" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div style=\\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f0f0f0;color:#ccc;font-size:10px;\\\'>❌</div>\'">';
-            html += '</div>';
-        } else {
-            html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 10px;">无图</div>';
-        }
+       
+if (thumbnailSrc && thumbnailSrc !== '') {
+    if (thumbnailSrc.startsWith('data:image') || thumbnailSrc.startsWith('blob:')) {
+        html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; background: #f5f5f5;">';
+        html += '<img src="' + thumbnailSrc + '" style="width:100%; height:100%; object-fit:cover;">';
+        html += '</div>';
+    } else {
+        html += '<div class="lazy-container" style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; overflow: hidden; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">';
+        html += '<div class="lazy-spinner" style="width:16px; height:16px; border:2px solid #eee; border-top-color:#2c5e2a; border-radius:50%; animation: spin 1s linear infinite;"></div>';
+        html += '<img class="lazy-img" data-src="' + thumbnailSrc + '" style="display:none; width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML=\'<div style=\\\'color:#ccc;font-size:10px;\\\'>❌</div>\'">';
+        html += '</div>';
+    }
+} else {
+    html += '<div style="position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; border-radius: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 10px;">无图</div>';
+}
+       
         
         html += '<div style="padding-right: 48px;">';
         html += '<div class="menu-simple-name">' + escapeHtml(item.name) + '</div>';
@@ -3532,6 +3537,27 @@ else if (item.category === '水果') categoryClass = 'tag-fruit';
         };
         container.addEventListener('click', container._oldClickHandler);
     }
+
+
+// 在 renderMenuManagement 函数的末尾（最后的 } 之前）添加
+setTimeout(function() {
+    document.querySelectorAll('.lazy-img').forEach(function(img) {
+        var src = img.dataset.src;
+        if (!src) return;
+        var container = img.parentElement;
+        var spinner = container.querySelector('.lazy-spinner');
+        loadImageSmart(src).then(function(url) {
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                if (spinner) spinner.style.display = 'none';
+            } else {
+                if (spinner) spinner.innerHTML = '❌';
+            }
+        });
+    });
+}, 100);
+
 }
 
 
@@ -6273,6 +6299,167 @@ document.addEventListener('input', function(e) {
         e.target.style.height = e.target.scrollHeight + 'px';
     }
 });
+
+
+// ========== IndexedDB 图片缓存 ==========
+const DB_NAME = 'RecipeImageCache';
+const STORE_NAME = 'images';
+const DB_VERSION = 1;
+
+// 打开数据库
+function openImageDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'url' });
+                console.log('📁 创建 IndexedDB 图片缓存表');
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+// 缓存图片到 IndexedDB
+async function cacheImageToDB(url, blob) {
+    try {
+        const db = await openImageDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put({ 
+            url: url, 
+            blob: blob, 
+            cachedAt: Date.now() 
+        });
+        await tx.done;
+        console.log(`💾 图片已缓存: ${url.substring(0, 50)}...`);
+    } catch(e) {
+        console.warn('缓存失败:', e);
+    }
+}
+
+// 从 IndexedDB 加载图片
+async function loadImageFromDB(url) {
+    try {
+        const db = await openImageDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const result = await new Promise((resolve) => {
+            const request = tx.objectStore(STORE_NAME).get(url);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(null);
+        });
+        
+        if (result && result.blob) {
+            console.log(`⚡ 从缓存加载: ${url.substring(0, 50)}...`);
+            return URL.createObjectURL(result.blob);
+        }
+        return null;
+    } catch(e) {
+        console.warn('读取缓存失败:', e);
+        return null;
+    }
+}
+
+// 智能加载图片（先缓存，后 CDN）
+async function loadImageSmart(url) {
+    if (!url) return null;
+    
+    // 1. 检查 IndexedDB 缓存
+    const cached = await loadImageFromDB(url);
+    if (cached) return cached; // ⚡ 秒开！
+    
+    // 2. 从 CDN 下载
+    try {
+        console.log(`📥 从 CDN 下载: ${url.substring(0, 50)}...`);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('下载失败');
+        const blob = await response.blob();
+        
+        // 3. 存入缓存（异步，不阻塞显示）
+        cacheImageToDB(url, blob);
+        
+        return URL.createObjectURL(blob);
+    } catch(e) {
+        console.warn('图片加载失败:', e);
+        return null;
+    }
+}
+
+// 预加载所有图片（后台）
+async function preloadAllImages() {
+    const data = JSON.parse(localStorage.getItem('recipe_plan_v2'));
+    const imageUrls = [];
+    
+    // 收集所有图片 URL（只收集 CDN 链接）
+    data.menuItems.forEach(item => {
+        if (item.localImage?.startsWith('https://')) {
+            imageUrls.push(item.localImage);
+        }
+        if (item.localThumbnail?.startsWith('https://')) {
+            imageUrls.push(item.localThumbnail);
+        }
+    });
+    
+    console.log(`📦 预加载 ${imageUrls.length} 张图片...`);
+    
+    // 分批预加载，避免阻塞主线程
+    for (let i = 0; i < imageUrls.length; i += 5) {
+        const batch = imageUrls.slice(i, i + 5);
+        await Promise.all(batch.map(async (url) => {
+            // 检查是否已缓存
+            const cached = await loadImageFromDB(url);
+            if (!cached) {
+                // 未缓存，下载并缓存
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        await cacheImageToDB(url, blob);
+                    }
+                } catch(e) {
+                    // 忽略单个图片失败
+                }
+            }
+        }));
+        console.log(`⏳ 预加载进度: ${Math.min(i + 5, imageUrls.length)}/${imageUrls.length}`);
+    }
+    
+    console.log('✅ 所有图片预加载完成！');
+}
+
+// 获取缓存大小
+async function getCacheSize() {
+    try {
+        const db = await openImageDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const count = await new Promise((resolve) => {
+            const request = store.count();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve(0);
+        });
+        return count;
+    } catch(e) {
+        return 0;
+    }
+}
+
+// 清空缓存
+async function clearImageCache() {
+    try {
+        const db = await openImageDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).clear();
+        await tx.done;
+        console.log('🗑️ 图片缓存已清空');
+        return true;
+    } catch(e) {
+        console.warn('清空缓存失败:', e);
+        return false;
+    }
+}
+
 function init(){
 
 
@@ -6482,6 +6669,14 @@ document.getElementById('nextWeekBtn')?.addEventListener('click', nextWeek);
 
 initIngredientModal();
 initAutoResizeTextareas();
+
+
+// 在 init() 函数末尾添加
+setTimeout(function() {
+    preloadAllImages().then(function() {
+        renderMenuManagement();
+    });
+}, 3000);
 }
 
 
@@ -6589,6 +6784,8 @@ document.getElementById('searchWishInput')?.addEventListener('input', (e) => {
 
 document.getElementById('addWishBtn')?.addEventListener('click', addToWish);
 // =============================================
+
+
 
 
     init();
