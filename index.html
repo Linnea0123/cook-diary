@@ -52,7 +52,7 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;text-align:center;white-spa
 .fl{display:block;font-size:15px;font-weight:900;margin:10px 0 4px}
 .status{font-size:14px;font-weight:900;margin-top:10px;line-height:1.6;word-break:break-all}
 
-.row{display:flex;align-items:center;gap:9px;border-bottom:1px solid #999;padding:12px 2px;cursor:pointer}
+.row{display:flex;align-items:center;gap:9px;border-bottom:1px solid #999;padding:12px 2px;cursor:default}
 .row .main{flex:1;min-width:0;margin:0;padding:0}
 .row .l1,.row .l2{width:100%;margin:0;padding:0}
 .row .l1{display:flex;align-items:center;gap:0}
@@ -66,18 +66,17 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;text-align:center;white-spa
 .dgrid{display:flex;flex-wrap:wrap;gap:8px}
 .dgrid button{border:1px solid #999;background:#fff;border-radius:10px;min-width:66px;height:50px;font-size:17px;font-weight:900;cursor:pointer}
 .dgrid button.on{background:#d9d9d9;color:#333}
-.cb{width:30px;height:30px;min-width:30px;border:2px solid #999;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;line-height:1}
+.cb{width:30px;height:30px;min-width:30px;border:2px solid #999;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;line-height:1;cursor:pointer}
 .row.done .cb{background:#000;color:#fff}
 .subj{font-size:15px;font-weight:900;white-space:nowrap;margin-right:6px;line-height:1.35}
-.txt{flex:1;font-size:18px;font-weight:900;line-height:1.35}
+.txt{flex:1;font-size:18px;font-weight:900;line-height:1.35;cursor:pointer}
 .row.done{color:#555}
 .row.done .txt,.row.done .subj{color:#555}
 .row.done .cb{border-color:#999;background:#555;color:#fff}
 .row.done .time{color:#555;border-bottom-color:#555}
 .actual,.over{color:#666;font-size:15px;font-weight:900}
-.time{font-size:16px;font-weight:900;white-space:nowrap;border-bottom:1px dashed #bbb;padding:2px 3px;letter-spacing:0}
+.time{font-size:16px;font-weight:900;white-space:nowrap;border-bottom:1px dashed #bbb;padding:2px 3px;letter-spacing:0;cursor:pointer}
 .time .d{font-size:16px;font-weight:900}
-.del{font-size:22px;font-weight:900;padding:0 2px 0 4px}
 .empty{text-align:center;font-size:16px;padding:26px 0}
 .all-done{display:inline-block;font-size:16px;font-weight:900;margin-left:auto;white-space:nowrap;cursor:pointer}
 
@@ -129,9 +128,9 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px;border:1px solid #
 .tpl{border-top:1px solid #999;margin-top:12px;padding-top:10px}
 .tpl-list{display:flex;flex-wrap:wrap;gap:0}
 .tpl-item{display:flex;align-items:center;width:50%;box-sizing:border-box;padding-right:12px;margin:0 0 8px}
-.tpl-item .t-txt{flex:1;font-size:15px;font-weight:900;cursor:pointer;line-height:1.35;display:flex;align-items:center;min-height:48px}
-.tpl-item .t-txt .tc{color:#888;font-weight:900;margin-left:8px}
-#tplList button{border:0;background:transparent;padding:0 8px;margin-left:8px;font-size:26px;font-weight:900;color:#000;cursor:pointer;line-height:1;min-width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+.tpl-item .t-txt{flex:1;font-size:15px;font-weight:900;cursor:pointer;line-height:44px;height:44px;white-space:nowrap;overflow:hidden}
+.tpl-item .t-txt .tc{color:#666;font-weight:900;margin-left:8px}
+#tplList button{border:0;background:transparent;padding:0;margin-left:8px;font-size:26px;font-weight:900;color:#000;cursor:pointer;line-height:44px;height:44px;min-width:44px;text-align:center;font-family:inherit;position:relative;top:-1.5px}
 #tmask{z-index:120}
 #tmask .inp{margin-bottom:6px}
 .subpick{display:flex;flex-wrap:wrap;gap:0}
@@ -295,6 +294,30 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px;border:1px solid #
     </div>
   </div>
 </div>
+
+<div class="mask" id="emask">
+  <div class="modal">
+    <div class="mhead"><span id="etitle">编辑任务</span><span id="eclose">✕</span></div>
+    <div class="mbody">
+      <label class="fl">科目</label>
+      <div class="subpick" id="etaskSubjPick"></div>
+      <label class="fl">任务名</label>
+      <input class="inp" id="etaskName" placeholder="任务内容">
+      <div class="mrow" style="margin-top:14px">
+        <span>开始</span>
+        <select id="estart"></select>
+        <span>结束</span>
+        <select id="eend"></select>
+      </div>
+      <div class="btns">
+        <button class="btn solid" id="esave">保存</button>
+        <button class="btn" id="eclear">清除时间</button>
+        <button class="btn" id="ewhole">编辑整天</button>
+        <button class="btn" id="edel">删除任务</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 var cheers = ['很好，继续加油！','已经过半啦！','快完成了，坚持一下！','最后一项了！'];
 var NAMES = ['周一','周二','周三','周四','周五','周六','周日'];
@@ -375,7 +398,7 @@ function sorted(){
 }
 
 function render(){
-  var per=sortBy==='subj'?6:8;
+  var per=sortBy==='subj'?6:7;
   var all=sorted();
   var total=all.length;
   var pages=Math.max(1,Math.ceil(total/per));
@@ -402,8 +425,7 @@ function render(){
     row.innerHTML='<div class="cb">'+(t.done?'✓':'')+'</div>'+
       '<div class="main"><div class="l1">'+(sub?'<span class="subj">'+sub+'</span>':'')+
       '<span class="txt">'+esc(t.txt)+'</span>'+(actSpan?actSpan:'')+'</div></div>'+
-      '<span class="time" data-i="'+i+'">'+(t.time?'<span class="d">【'+durOf(t.time)+'】</span>'+t.time:'设时间')+'</span>'+
-      '<span class="del" data-i="'+i+'">×</span>';
+      '<span class="time" data-i="'+i+'">'+(t.time?'<span class="d">【'+durOf(t.time)+'】</span>'+t.time:'设时间')+'</span>';
     list.appendChild(row);
   });
   renderSubbar();
@@ -442,18 +464,81 @@ function renderPager(pages){
 
 document.getElementById('list').onclick=function(e){
   var el=e.target;
-  if(el.classList.contains('del')){tasks.splice(+el.getAttribute('data-i'),1);save();render();return}
-  var tm=el.closest('.time');
-  if(tm){openExisting();return}
   var row=el.closest('.row');
   if(!row)return;
   var idx=+row.getAttribute('data-i');
+  /* 点任务正文 / 时间段 → 打开单条编辑（科目+任务名+时间） */
+  if(el.closest('.txt')||el.closest('.time')){openTaskEdit(idx);return}
+  /* 只有点复选框才切换完成状态（完成时弹出实际用时界面），点其他区域不响应 */
+  if(!el.classList.contains('cb'))return;
   if(tasks[idx].done){
     tasks[idx].done=false;tasks[idx].stamp='';tasks[idx].act=0;tasks[idx].over=0;save();render();
   }else{
     tasks[idx].done=true;save();render();
     askDuration(idx);
   }
+};
+
+/* ---- 单条编辑任务（科目/任务名/时间） ---- */
+var emask=document.getElementById('emask'),taskEditIdx=-1,taskSubjSel='';
+(function(){
+  var s=document.getElementById('estart'),e=document.getElementById('eend');
+  if(!s||!e)return;
+  for(var hh=6;hh<=23;hh++){
+    for(var mi=0;mi<60;mi+=5){
+      var v=pad(hh)+':'+pad(mi);
+      s.appendChild(new Option(v,v));
+      e.appendChild(new Option(v,v));
+    }
+  }
+})();
+function setSel(sel,v){for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===v){sel.selectedIndex=i;return}}}
+var TASK_OPTS=['无','语文','数学','英语','体育','课外班','其他'];
+function renderTaskPick(){
+  var box=document.getElementById('etaskSubjPick');if(!box)return;
+  box.innerHTML='';
+  TASK_OPTS.forEach(function(s){
+    var v=(s==='无')?'':s;
+    var b=document.createElement('button');b.type='button';b.textContent=s;
+    if(taskSubjSel===v)b.className='on';
+    b.onclick=function(){taskSubjSel=v;renderTaskPick()};
+    box.appendChild(b);
+  });
+}
+function openTaskEdit(i){
+  var t=tasks[i];if(!t)return;
+  taskEditIdx=i;
+  document.getElementById('etitle').textContent='编辑任务';
+  taskSubjSel=t.subj||'';renderTaskPick();
+  document.getElementById('etaskName').value=t.txt||'';
+  var a='19:00',b='19:30';
+  if(t.time&&t.time.indexOf('-')>0){var p=t.time.split('-');a=p[0];b=p[1]}
+  setSel(document.getElementById('estart'),a);setSel(document.getElementById('eend'),b);
+  emask.className='mask show';
+}
+function closeTaskEdit(){emask.className='mask';taskEditIdx=-1}
+document.getElementById('eclose').onclick=closeTaskEdit;
+document.getElementById('esave').onclick=function(){
+  if(taskEditIdx<0)return;
+  var nm=document.getElementById('etaskName').value.trim();
+  if(!nm){alert('请填写任务名');return}
+  var a=document.getElementById('estart').value,b=document.getElementById('eend').value;
+  if(toMin(b)<=toMin(a)){alert('结束时间要晚于开始时间');return}
+  var t=tasks[taskEditIdx];
+  t.subj=taskSubjSel;t.txt=nm;t.time=a+'-'+b;
+  save();render();closeTaskEdit();
+};
+document.getElementById('eclear').onclick=function(){
+  if(taskEditIdx<0)return;
+  tasks[taskEditIdx].time='';
+  save();render();closeTaskEdit();
+};
+document.getElementById('ewhole').onclick=function(){closeTaskEdit();openExisting()};
+document.getElementById('edel').onclick=function(){
+  if(taskEditIdx<0)return;
+  if(!confirm('删除这条任务？'))return;
+  tasks.splice(taskEditIdx,1);
+  save();render();closeTaskEdit();
 };
 
 /* ---- 实际用时选择 ---- */
@@ -746,13 +831,34 @@ function saveCred(){
   localStorage.setItem('gist_id',$('gid').value.trim());
 }
 function sts(m){$('stx').textContent=m}
+/* 同步范围：除凭据外全部本地数据（作业/实际用时、模板、鼓励语、排序偏好等） */
+var SYNC_SKIP=['gh_token','gist_id','__t'];
 function collect(){
   var o={};
   for(var i=0;i<localStorage.length;i++){
     var k=localStorage.key(i);
-    if(k.indexOf('homework_')===0)o[k]=JSON.parse(localStorage.getItem(k));
+    if(SYNC_SKIP.indexOf(k)>=0)continue;
+    o[k]=localStorage.getItem(k);
   }
   return o;
+}
+function applyData(o){
+  var n=0,keys=[];
+  for(var k in o){
+    if(!Object.prototype.hasOwnProperty.call(o,k))continue;
+    if(SYNC_SKIP.indexOf(k)>=0)continue;
+    var v=o[k];
+    localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));
+    n++;keys.push(k);
+  }
+  refreshAll();
+  return {n:n,keys:keys};
+}
+function refreshAll(){
+  try{sortBy=localStorage.getItem('sortMode')||'time'}catch(e){}
+  filterSubj='';PAGE=0;
+  load();renderWeek();render();
+  try{applyCheer()}catch(e){}
 }
 function req(method,url,body,cb){
   var x=new XMLHttpRequest();
@@ -796,10 +902,9 @@ function doDownload(){
     var f=d&&d.files&&d.files['homework.json'];
     if(!f)return sts('云端没有 homework.json');
     var o=null;try{o=JSON.parse(f.content)}catch(e){return sts('数据解析失败')}
-    var n=0;
-    for(var k in o){if(k.indexOf('homework_')===0){localStorage.setItem(k,JSON.stringify(o[k]));n++}}
-    load();renderWeek();render();
-    sts('已下载 ✔ 合并 '+n+' 天的数据到本机');
+    var r=applyData(o);
+    var days=0;for(var k in o){if(k.indexOf('homework_')===0)days++}
+    sts('已下载 ✔ 合并 '+r.n+' 项数据（'+days+' 天作业）到本机');
   });
 }
 
@@ -846,10 +951,8 @@ document.getElementById('bakFile').onchange=function(e){
   var f=e.target.files[0];if(!f)return;
   readTextFile(f,function(s){
     var o=null;try{o=JSON.parse(s)}catch(err){return sts('备份文件解析失败')}
-    var n=0;
-    for(var k in o){if(k.indexOf('homework_')===0){localStorage.setItem(k,JSON.stringify(o[k]));n++}}
-    load();renderWeek();render();
-    sts('已从备份恢复 '+n+' 天数据');
+    var r=applyData(o);
+    sts('已从备份恢复 '+r.n+' 项数据');
     e.target.value='';
   });
 };
