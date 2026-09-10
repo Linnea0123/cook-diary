@@ -11,20 +11,26 @@ body{font-family:"PingFang SC","Microsoft YaHei","Heiti SC",sans-serif;color:#00
 .box{max-width:760px;margin:0 auto}
 input,select,textarea,button{font-family:inherit;font-weight:700;color:#000;font-size:16px}
 
-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
-#openAdd{border:1px solid #999;color:#666;background:#fff;border-radius:10px;width:48px;height:46px;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-.hleft,.hright{display:flex;gap:10px;align-items:center}
-.iobtn{border:3px solid #000;background:#fff;border-radius:10px;padding:10px 10px;font-size:14px;font-weight:900;cursor:pointer;white-space:nowrap}
+header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+h1{font-size:20px;font-weight:900;letter-spacing:1px;text-align:center;white-space:nowrap}
+#openAdd{border:1px solid #999;color:#666;background:#fff;border-radius:10px;width:42px;height:34px;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.hleft,.hright{display:flex;gap:10px;align-items:center;flex:1;min-width:0}
+.hleft{justify-content:flex-start}
+.hright{justify-content:flex-end}
+.iobtn{border:1px solid #999;background:#fff;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:900;cursor:pointer;white-space:nowrap}
 .iobtn.soft{border:1px solid #999;color:#666;font-size:15px}
 
 .weekbar{display:flex;align-items:stretch;gap:10px;margin-bottom:12px}
 .arrow{width:34px;min-width:34px;border:1px solid #999;color:#666;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;cursor:pointer;background:#fff}
+.pager{display:flex;align-items:center;justify-content:center;margin-top:14px}
+.pager .arrow{width:40px;min-width:40px;height:40px;font-size:24px}
+.pager .arrow.dis{color:#ccc;border-color:#ccc;cursor:default}
+.pager .pg{font-size:16px;font-weight:900;margin:0 14px}
 .week{display:flex;gap:10px;flex:1}
-.day{flex:1;border:2px solid #000;border-radius:10px;padding:7px 1px;text-align:center;cursor:pointer;background:#fff}
+.day{flex:1;border:1px solid #999;border-radius:10px;padding:4px 1px;text-align:center;cursor:pointer;background:#fff}
 .day .dn{display:block;font-size:15px;font-weight:900;color:#000}
-.day .dd{display:block;font-size:13px;font-weight:900;color:#000;margin-top:2px}
-.day.today{border:4px solid #000;background:#ededed}
+.day .dd{display:block;font-size:13px;font-weight:900;color:#000;margin-top:1px}
+.day.today{border:1px solid #999;background:#ededed}
 .day.sel{background:#000}
 .day.sel .dn,.day.sel .dd{color:#fff}
 
@@ -34,15 +40,15 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .cheer{text-align:center;font-size:15px;font-weight:900;margin-top:8px;min-height:20px}
 
 .sortbar{display:flex;align-items:center;gap:14px;margin:14px 0 6px;font-size:15px;font-weight:900}
-.sortbar button{border:1px solid #000;background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer}
+.sortbar button{border:1px solid #999;background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer}
 .sortbar button.on{background:#000;color:#fff}
 .subbar{display:none;flex-wrap:wrap;gap:12px;margin:0 0 6px}
 .subbar.show{display:flex}
-.subbar button{border:3px solid #000;background:#fff;border-radius:10px;padding:7px 12px;font-size:15px;font-weight:900;cursor:pointer}
+.subbar button{border:1px solid #999;background:#fff;border-radius:10px;padding:7px 12px;font-size:15px;font-weight:900;cursor:pointer}
 .subbar button.on{background:#000;color:#fff}
 .total{font-size:16px;font-weight:900;text-align:center;margin:0 0 10px}
 .over{font-size:15px;font-weight:900;white-space:nowrap}
-.inp{border:3px solid #000;border-radius:8px;padding:8px;font-size:15px;font-weight:900;width:100%;background:#fff}
+.inp{border:1px solid #999;border-radius:8px;padding:8px;font-size:15px;font-weight:900;width:100%;background:#fff}
 .fl{display:block;font-size:15px;font-weight:900;margin:10px 0 4px}
 .status{font-size:14px;font-weight:900;margin-top:10px;line-height:1.6;word-break:break-all}
 
@@ -51,28 +57,29 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .row .l1,.row .l2{width:100%;margin:0;padding:0}
 .row .l1{display:flex;align-items:center;gap:0}
 .row .l2{display:flex;align-items:center;gap:0;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.startb{border:3px solid #000;background:#fff;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;white-space:nowrap}
+.startb{border:1px solid #999;background:#fff;border-radius:8px;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer;white-space:nowrap}
 .running{font-size:15px;font-weight:900}
-.actual{font-size:15px;font-weight:900;background:#ededed;border-radius:6px;padding:1px 6px;white-space:nowrap}
-.actbtn{border:3px solid #000;background:#fff;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:900;cursor:pointer;margin-left:8px}
+.actual{font-size:15px;font-weight:900;white-space:nowrap;color:#555;margin-left:6px}
+.actual.over{background:#000;color:#fff;border-radius:6px;padding:1px 6px}
+.actbtn{border:1px solid #999;background:#fff;border-radius:10px;padding:6px 12px;font-size:14px;font-weight:900;cursor:pointer;margin-left:8px}
 .dtitle{font-size:19px;font-weight:900;margin-bottom:10px;line-height:1.4}
 .dgrid{display:flex;flex-wrap:wrap;gap:8px}
-.dgrid button{border:1px solid #000;background:#fff;border-radius:10px;min-width:66px;height:50px;font-size:17px;font-weight:900;cursor:pointer}
+.dgrid button{border:1px solid #999;background:#fff;border-radius:10px;min-width:66px;height:50px;font-size:17px;font-weight:900;cursor:pointer}
 .dgrid button.on{background:#d9d9d9;color:#333}
-.cb{width:30px;height:30px;min-width:30px;border:3px solid #000;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;line-height:1}
+.cb{width:30px;height:30px;min-width:30px;border:2px solid #999;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;line-height:1}
 .row.done .cb{background:#000;color:#fff}
 .subj{font-size:15px;font-weight:900;white-space:nowrap;margin-right:6px;line-height:1.35}
 .txt{flex:1;font-size:18px;font-weight:900;line-height:1.35}
 .row.done{color:#555}
 .row.done .txt,.row.done .subj{color:#555}
-.row.done .cb{border-color:#555;background:#555;color:#fff}
+.row.done .cb{border-color:#999;background:#555;color:#fff}
 .row.done .time{color:#555;border-bottom-color:#555}
 .actual,.over{color:#666;font-size:15px;font-weight:900}
 .time{font-size:16px;font-weight:900;white-space:nowrap;border-bottom:1px dashed #bbb;padding:2px 3px;letter-spacing:0}
 .time .d{font-size:16px;font-weight:900}
 .del{font-size:22px;font-weight:900;padding:0 2px 0 4px}
 .empty{text-align:center;font-size:16px;padding:26px 0}
-.all-done{display:inline-block;background:#ededed;border-radius:8px;padding:6px 10px;font-size:16px;font-weight:900;margin-left:auto;white-space:nowrap;cursor:pointer}
+.all-done{display:inline-block;font-size:16px;font-weight:900;margin-left:auto;white-space:nowrap;cursor:pointer}
 
 
 /* 预览编辑 */
@@ -82,7 +89,7 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .pvr .px{font-size:20px;font-weight:900;padding:0 4px}
 .pvr .l2{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:15px;font-weight:900;flex-wrap:wrap}
 .pvr .pvtime{font-size:20px;font-weight:900;white-space:nowrap}
-.pm{border:3px solid #000;background:#fff;border-radius:8px;min-width:48px;height:42px;font-size:17px;font-weight:900;cursor:pointer;padding:0 8px}
+.pm{border:1px solid #999;background:#fff;border-radius:8px;min-width:48px;height:42px;font-size:17px;font-weight:900;cursor:pointer;padding:0 8px}
 .pm.ok{background:#000;color:#fff}
 
 .mask{display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:#fff;z-index:99;padding:10px;overflow:auto}
@@ -93,13 +100,13 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .mbody{padding:12px}
 .mrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;font-size:16px}
 .mrow label{display:flex;align-items:center;gap:5px;font-weight:900;cursor:pointer}
-select{border:3px solid #000;border-radius:8px;padding:6px;font-size:16px;font-weight:900;background:#fff}
-textarea{width:100%;height:160px;border:3px solid #000;border-radius:10px;padding:10px;font-size:17px;line-height:1.8;outline:none;background:#fff}
+select{border:1px solid #999;border-radius:8px;padding:6px;font-size:16px;font-weight:900;background:#fff}
+textarea{width:100%;height:160px;border:1px solid #999;border-radius:10px;padding:10px;font-size:17px;line-height:1.8;outline:none;background:#fff;resize:none}
 .tip{font-size:14px;font-weight:900;border:2px dashed #000;border-radius:8px;padding:8px;margin-bottom:10px;line-height:1.6}
 .btns{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
-.btn{border:3px solid #000;border-radius:10px;padding:11px 18px;font-size:16px;font-weight:900;cursor:pointer;background:#fff}
+.btn{border:1px solid #999;border-radius:10px;padding:11px 18px;font-size:16px;font-weight:900;cursor:pointer;background:#fff}
 .btn.solid{background:#000;color:#fff}
-input[type=checkbox],input[type=radio]{width:22px;height:22px}
+input[type=checkbox],input[type=radio]{width:22px;height:22px;border:1px solid #999}
 /* 老WebView不支持flex gap，用margin代替，防止边框粘连 */
 .btns,.mrow,.sortbar,.subbar,.week,.weekbar,.hleft,.hright,.dgrid,.pvr .l2,.row .l1,.row .l2{gap:0}
 .btns>*{margin:0 14px 10px 0}
@@ -119,8 +126,19 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
 .row .l1>*{margin-right:6px}
 .pvr .l1>*{margin-right:8px}
 .btn.sm{padding:9px 12px;font-size:14px}
-#dok,#dskip{height:44px;padding:8px 18px;box-sizing:border-box;border:1px solid #000}
-#dcustom{height:44px;box-sizing:border-box}
+.tpl{border-top:1px solid #999;margin-top:12px;padding-top:10px}
+.tpl-list{display:flex;flex-wrap:wrap;gap:0}
+.tpl-item{display:flex;align-items:center;width:50%;box-sizing:border-box;padding-right:12px;margin:0 0 8px}
+.tpl-item .t-txt{flex:1;font-size:15px;font-weight:900;cursor:pointer;line-height:1.35;display:flex;align-items:center;min-height:48px}
+.tpl-item .t-txt .tc{color:#888;font-weight:900;margin-left:8px}
+#tplList button{border:0;background:transparent;padding:0 8px;margin-left:8px;font-size:26px;font-weight:900;color:#000;cursor:pointer;line-height:1;min-width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+#tmask{z-index:120}
+#tmask .inp{margin-bottom:6px}
+.subpick{display:flex;flex-wrap:wrap;gap:0}
+.subpick button{border:1px solid #999;background:#fff;border-radius:10px;padding:7px 12px;font-size:15px;font-weight:900;cursor:pointer;margin:0 12px 10px 0}
+.subpick button.on{background:#000;color:#fff}
+#dok,#dskip{height:44px;padding:8px 18px;box-sizing:border-box;border:1px solid #999}
+#dcustom{height:44px;box-sizing:border-box;border:1px solid #999}
 .row .l1>*{margin-right:6px}
 .row .l2>*{margin-right:8px}
 </style>
@@ -159,6 +177,7 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
   <div class="subbar" id="subbar"></div>
 
   <div id="list"></div>
+  <div id="pager" class="pager"></div>
 </div>
 
 <div class="mask" id="mask">
@@ -175,15 +194,15 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
           <span>每项</span>
           <select id="dur">
             <option value="15">15 分钟</option>
-            <option value="20">20 分钟</option>
+            <option value="20" selected>20 分钟</option>
             <option value="25">25 分钟</option>
-            <option value="30" selected>30 分钟</option>
+            <option value="30">30 分钟</option>
             <option value="40">40 分钟</option>
             <option value="45">45 分钟</option>
           </select>
           <label><input type="checkbox" id="rest"> 每项后休息 5 分钟</label>
         </div>
-          <textarea id="src" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="语文&#10;练字&#10;抄写第3课生字&#10;数学&#10;口算100题&#10;英语&#10;读课文第5课"></textarea>
+          <textarea id="src" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
         <div class="btns">
         </div>
       </div>
@@ -192,8 +211,12 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
       </div>
       <div class="btns" id="inBtns">
         <button class="btn solid" id="gen">预 览</button>
-        <button class="btn" id="mclose2">取消</button>
-        <button class="btn" id="clear">清空本日</button>
+        <button class="btn" id="ok">确 定</button>
+        <button class="btn" id="clear">清空输入框</button>
+        <button class="btn" id="tplAdd">添加模板</button>
+      </div>
+      <div class="tpl" id="tplArea">
+        <div class="tpl-list" id="tplList"></div>
       </div>
       <div class="btns" id="pvBtns" style="display:none">
         <button class="btn solid" id="confirm">确 认 生 成</button>
@@ -253,10 +276,29 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
     </div>
   </div>
 </div>
+
+<div class="mask" id="tmask">
+  <div class="modal">
+    <div class="mhead"><span id="ttitle">添加模板</span><span id="tclose">✕</span></div>
+    <div class="mbody">
+      <label class="fl">科目</label>
+      <div class="subpick" id="tplSubjPick"></div>
+      <label class="fl">内容</label>
+      <input class="inp" id="tplTxt" placeholder="如 课外阅读">
+      <label class="fl">时间（可空）</label>
+      <input class="inp" id="tplTime" placeholder="如 18:30-19:00">
+      <div class="btns">
+        <button class="btn solid" id="tplSave">保存</button>
+        <button class="btn" id="tplDel" style="display:none">删除</button>
+        <button class="btn" id="tplCancel">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 var cheers = ['很好，继续加油！','已经过半啦！','快完成了，坚持一下！','最后一项了！'];
 var NAMES = ['周一','周二','周三','周四','周五','周六','周日'];
-var ORDER = ['语文','数学','英语','体育','其他'];
+var ORDER = ['语文','数学','英语','体育','课外班','其他'];
 var tasks = [];
 /* 离线兼容：存储不可用时退化为内存存储 */
 var LS_OK=true;
@@ -272,6 +314,7 @@ if(!LS_OK){
 }
 var sortBy = localStorage.getItem('sortMode') || 'time';
 var filterSubj = '';
+var PAGE = 0;
 
 function pad(n){return (n<10?'0':'')+n}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -306,7 +349,7 @@ function renderWeek(){
     var el=document.createElement('div');
     el.className='day'+(s===sel?' sel':'')+(s===todayStr()?' today':'');
     el.innerHTML='<span class="dn">'+NAMES[i]+'</span><span class="dd">'+(d.getMonth()+1)+'/'+d.getDate()+'</span>';
-    (function(ss){el.onclick=function(){sel=ss;load();renderWeek();render()}})(s);
+    (function(ss){el.onclick=function(){sel=ss;PAGE=0;load();renderWeek();render()}})(s);
     wk.appendChild(el);
   }
 }
@@ -332,11 +375,19 @@ function sorted(){
 }
 
 function render(){
+  var per=sortBy==='subj'?6:8;
+  var all=sorted();
+  var total=all.length;
+  var pages=Math.max(1,Math.ceil(total/per));
+  if(PAGE<0)PAGE=0;
+  if(PAGE>=pages)PAGE=pages-1;
+  var start=PAGE*per;
+  var view=all.slice(start,start+per);
   var list=document.getElementById('list');list.innerHTML='';
   if(!tasks.length) list.innerHTML='';
   document.getElementById('sTime').className=sortBy==='time'?'on':'';
   document.getElementById('sSubj').className=sortBy==='subj'?'on':'';
-  sorted().forEach(function(o){
+  view.forEach(function(o){
     var i=o.i,t=o.t;
     var row=document.createElement('div');
     row.className='row'+(t.done?' done':'');
@@ -346,7 +397,7 @@ function render(){
     if(t.done&&t.act){
       var gap=t.time?t.act-durOf(t.time):0;
       var st=gap>0?'超时 '+gap+'分':(gap<0?'提前 '+(-gap)+'分':'按时');
-      actSpan='<span class="actual">【'+t.act+' · '+st+'】</span>';
+      actSpan='<span class="actual'+(gap>0?' over':'')+'">【'+t.act+' · '+st+'】</span>';
     }
     row.innerHTML='<div class="cb">'+(t.done?'✓':'')+'</div>'+
       '<div class="main"><div class="l1">'+(sub?'<span class="subj">'+sub+'</span>':'')+
@@ -368,6 +419,25 @@ function render(){
   document.getElementById('tnum').textContent=tasks.length;
   document.getElementById('pct').textContent=p+'%';
   document.getElementById('fill').style.width=p+'%';
+  renderPager(pages);
+}
+
+function renderPager(pages){
+  var pg=document.getElementById('pager');
+  if(pages<=1){pg.innerHTML='';return}
+  pg.innerHTML='';
+  var prev=document.createElement('div');
+  prev.className='arrow'+(PAGE<=0?' dis':'');
+  prev.textContent='‹';
+  prev.onclick=function(){if(PAGE>0){PAGE--;render()}};
+  var lab=document.createElement('span');
+  lab.className='pg';
+  lab.textContent=(PAGE+1)+' / '+pages;
+  var next=document.createElement('div');
+  next.className='arrow'+(PAGE>=pages-1?' dis':'');
+  next.textContent='›';
+  next.onclick=function(){if(PAGE<pages-1){PAGE++;render()}};
+  pg.appendChild(prev);pg.appendChild(lab);pg.appendChild(next);
 }
 
 document.getElementById('list').onclick=function(e){
@@ -441,7 +511,7 @@ function renderSubbar(){
     var b=document.createElement('button');
     b.textContent=s||'全部';
     if(filterSubj===s)b.className='on';
-    b.onclick=function(){filterSubj=s;render()};
+    b.onclick=function(){filterSubj=s;PAGE=0;render()};
     bar.appendChild(b);
   });
 }
@@ -467,11 +537,76 @@ function parseBlock(text){
 }
 
 var mask=document.getElementById('mask');
-function openMask(){mask.className='mask show'}
+function openMask(){mask.className='mask show';renderTpls()}
 function closeMask(){mask.className='mask'}
 document.getElementById('openAdd').onclick=function(){editingExisting=false;showInput();openMask()};
 document.getElementById('mclose').onclick=closeMask;
-document.getElementById('mclose2').onclick=closeMask;
+
+/* ---- 常用模板 ---- */
+var TPL_KEY='taskTemplates';
+var tplEditIdx=-1;
+function getTpls(){
+  try{var a=JSON.parse(localStorage.getItem(TPL_KEY));if(Array.isArray(a))return a;}catch(e){}
+  var def=[{subj:'语文',txt:'课外阅读',time:'18:30-19:00'},{subj:'体育',txt:'跳绳',time:'19:00-19:15'}];
+  setTpls(def);return def;
+}
+function setTpls(a){try{localStorage.setItem(TPL_KEY,JSON.stringify(a))}catch(e){}}
+function renderTpls(){
+  var list=$('tplList');list.innerHTML='';
+  getTpls().forEach(function(t,i){
+    var item=document.createElement('div');item.className='tpl-item';
+    var sp=document.createElement('span');sp.className='t-txt';
+    sp.innerHTML='【'+esc(short(t.subj))+'】'+esc(t.txt)+(t.time?'<span class="tc">'+esc(t.time)+'</span>':'');
+    sp.onclick=function(){openTplEdit(i)};
+    var ins=document.createElement('button');ins.className='btn sm';ins.textContent='＋';ins.title='插入到输入框';
+    ins.onclick=function(){tplInsert(t)};
+    item.appendChild(sp);item.appendChild(ins);
+    list.appendChild(item);
+  });
+}
+function tplInsert(t){
+  var ta=$('src');
+  var line=t.subj+' '+(t.txt||'')+(t.time?' '+t.time:'');
+  ta.value=(ta.value?ta.value.replace(/\s*$/,'')+'\n':'')+line;
+  ta.focus();
+}
+var SUBJ_OPTS=['语文','数学','英语','体育','课外班','其他'];
+var tplSubjSel='';
+function renderSubjPick(){
+  var box=$('tplSubjPick');box.innerHTML='';
+  SUBJ_OPTS.forEach(function(s){
+    var b=document.createElement('button');
+    b.type='button';b.textContent=s;
+    if(tplSubjSel===s)b.className='on';
+    b.onclick=function(){tplSubjSel=s;renderSubjPick()};
+    box.appendChild(b);
+  });
+}
+function openTplEdit(i){
+  tplEditIdx=i;
+  var t=i>=0?getTpls()[i]:{subj:'',txt:'',time:''};
+  $('ttitle').textContent=i>=0?'修改模板':'添加模板';
+  tplSubjSel=t.subj||'';renderSubjPick();
+  $('tplTxt').value=t.txt||'';$('tplTime').value=t.time||'';
+  $('tplDel').style.display=i>=0?'':'none';
+  $('tmask').className='mask show';
+}
+function closeTplEdit(){$('tmask').className='mask';tplEditIdx=-1}
+$('tplAdd').onclick=function(){openTplEdit(-1)};
+$('tclose').onclick=closeTplEdit;
+$('tplCancel').onclick=closeTplEdit;
+$('tplDel').onclick=function(){
+  if(tplEditIdx>=0){var a=getTpls();a.splice(tplEditIdx,1);setTpls(a)}
+  closeTplEdit();renderTpls();
+};
+$('tplSave').onclick=function(){
+  var s=tplSubjSel,x=$('tplTxt').value.trim(),ti=$('tplTime').value.trim();
+  if(!s){alert('请选择科目');return}
+  if(!x){alert('请填写内容');return}
+  var a=getTpls();
+  if(tplEditIdx>=0)a[tplEditIdx]={subj:s,txt:x,time:ti};else a.push({subj:s,txt:x,time:ti});
+  setTpls(a);closeTplEdit();renderTpls();
+};
 
 var stSel=document.getElementById('st');
 for(var h=16;h<=21;h++){for(var mm=0;mm<60;mm+=10){
@@ -498,17 +633,30 @@ document.getElementById('gen').onclick=function(){
   });
   draft=items;editingExisting=false;showPreview();
 };
+document.getElementById('ok').onclick=function(){
+  var auto=radios[0].checked;
+  var start=toMin(stSel.value||'19:00');
+  var dur=parseInt(document.getElementById('dur').value,10);
+  var gap=dur+(document.getElementById('rest').checked?5:0);
+  var items=parseBlock(document.getElementById('src').value);
+  if(!items.length){alert('没识别到任务，检查一下格式～');return}
+  items.forEach(function(o){if(auto&&!o.time){o.time=toHm(start)+'-'+toHm(start+dur);start+=gap}});
+  items.forEach(function(o){tasks.push(o)});
+  document.getElementById('src').value='';PAGE=0;save();render();closeMask();showInput();
+};
 
 /* ---- 预览编辑 ---- */
 var draft=[],editingExisting=false;
 function $(id){return document.getElementById(id)}
 function showInput(){
   $('inSec').style.display='';$('inBtns').style.display='flex';
+  $('tplArea').style.display='';
   $('pvSec').style.display='none';$('pvBtns').style.display='none';
   document.querySelector('.mhead span').textContent='批量添加作业';
 }
 function showPreview(){
   $('inSec').style.display='none';$('inBtns').style.display='none';
+  $('tplArea').style.display='none';
   $('pvSec').style.display='';$('pvBtns').style.display='flex';
   
   drawPv();
@@ -564,7 +712,7 @@ $('confirm').onclick=function(){
     document.getElementById('src').value='';
   }
   draft=[];editingExisting=false;
-  save();render();closeMask();showInput();
+  PAGE=0;save();render();closeMask();showInput();
 };
 function openExisting(){
   if(!tasks.length)return;
@@ -573,10 +721,10 @@ function openExisting(){
 }
 
 document.getElementById('clear').onclick=function(){
-  if(confirm('清空 '+sel+' 这一天的全部任务？')){tasks=[];save();render();closeMask()}
+  document.getElementById('src').value='';document.getElementById('src').focus();
 };
-document.getElementById('sTime').onclick=function(){sortBy='time';filterSubj='';localStorage.setItem('sortMode',sortBy);render()};
-document.getElementById('sSubj').onclick=function(){sortBy='subj';localStorage.setItem('sortMode',sortBy);render()};
+document.getElementById('sTime').onclick=function(){sortBy='time';filterSubj='';PAGE=0;localStorage.setItem('sortMode',sortBy);render()};
+document.getElementById('sSubj').onclick=function(){sortBy='subj';PAGE=0;localStorage.setItem('sortMode',sortBy);render()};
 
 /* ---- GitHub Gist 同步 ---- */
 function $(id){return document.getElementById(id)}
@@ -589,6 +737,7 @@ function openSync(){
 function closeSync(){smask.className='mask'}
 
 
+$('btnDl').onclick=openSync;$('btnUl').onclick=openSync;
 $('sclose').onclick=closeSync;$('sclose2').onclick=closeSync;
 $('doDl').onclick=function(){saveCred();doDownload()};
 $('doUl').onclick=function(){saveCred();doUpload()};
