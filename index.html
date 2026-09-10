@@ -13,13 +13,14 @@ input,select,textarea,button{font-family:inherit;font-weight:700;color:#000;font
 
 header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
-#openAdd{border:3px solid #000;background:#fff;border-radius:10px;padding:10px 12px;font-size:15px;font-weight:900;cursor:pointer;white-space:nowrap}
-.hleft{display:flex;gap:6px}
-.iobtn{border:3px solid #000;background:#fff;border-radius:10px;padding:10px 8px;font-size:14px;font-weight:900;cursor:pointer;white-space:nowrap}
+#openAdd{border:1px solid #999;color:#666;background:#fff;border-radius:10px;width:48px;height:46px;font-size:24px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.hleft,.hright{display:flex;gap:10px;align-items:center}
+.iobtn{border:3px solid #000;background:#fff;border-radius:10px;padding:10px 10px;font-size:14px;font-weight:900;cursor:pointer;white-space:nowrap}
+.iobtn.soft{border:1px solid #999;color:#666;font-size:15px}
 
-.weekbar{display:flex;align-items:stretch;gap:4px;margin-bottom:12px}
+.weekbar{display:flex;align-items:stretch;gap:10px;margin-bottom:12px}
 .arrow{width:34px;min-width:34px;border:3px solid #000;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;cursor:pointer;background:#fff}
-.week{display:flex;gap:4px;flex:1}
+.week{display:flex;gap:10px;flex:1}
 .day{flex:1;border:2px solid #000;border-radius:10px;padding:7px 1px;text-align:center;cursor:pointer;background:#fff}
 .day .dn{display:block;font-size:15px;font-weight:900;color:#000}
 .day .dd{display:block;font-size:13px;font-weight:900;color:#000;margin-top:2px}
@@ -27,19 +28,19 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .day.sel{background:#000}
 .day.sel .dn,.day.sel .dd{color:#fff}
 
-.nums{display:flex;justify-content:space-between;font-size:16px;font-weight:900;margin-bottom:8px}
+.nums{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;font-weight:900;margin-bottom:8px}
 .bar{height:18px;border:3px solid #000;border-radius:10px;overflow:hidden}
 .fill{height:100%;width:0;background:#000}
 .cheer{text-align:center;font-size:15px;font-weight:900;margin-top:8px;min-height:20px}
 
-.sortbar{display:flex;align-items:center;gap:8px;margin:14px 0 6px;font-size:15px;font-weight:900}
+.sortbar{display:flex;align-items:center;gap:14px;margin:14px 0 6px;font-size:15px;font-weight:900}
 .sortbar button{border:3px solid #000;background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;font-weight:900;cursor:pointer}
 .sortbar button.on{background:#000;color:#fff}
-.subbar{display:none;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.subbar{display:none;flex-wrap:wrap;gap:12px;margin:0 0 6px}
 .subbar.show{display:flex}
 .subbar button{border:3px solid #000;background:#fff;border-radius:10px;padding:7px 12px;font-size:15px;font-weight:900;cursor:pointer}
 .subbar button.on{background:#000;color:#fff}
-.total{font-size:15px;font-weight:900;margin-top:8px}
+.total{font-size:16px;font-weight:900;text-align:center;margin:0 0 10px}
 .over{font-size:15px;font-weight:900;white-space:nowrap}
 .inp{border:3px solid #000;border-radius:8px;padding:8px;font-size:15px;font-weight:900;width:100%;background:#fff}
 .fl{display:block;font-size:15px;font-weight:900;margin:10px 0 4px}
@@ -61,8 +62,11 @@ h1{font-size:20px;font-weight:900;letter-spacing:1px;flex:1;text-align:center}
 .row.done .cb{background:#000;color:#fff}
 .subj{font-size:15px;font-weight:900;white-space:nowrap;margin-top:3px}
 .txt{flex:1;font-size:18px;font-weight:900;line-height:1.35}
-.row.done .txt{text-decoration:line-through}
-.stamp{font-size:13px;font-weight:900}
+.row.done{color:#555}
+.row.done .txt,.row.done .subj{color:#555}
+.row.done .cb{border-color:#555;background:#555;color:#fff}
+.row.done .time{color:#555;border-bottom-color:#555}
+.actual,.over{color:#000}
 .time{font-size:20px;font-weight:900;white-space:nowrap;border-bottom:3px dashed #000;padding:2px 3px;margin-top:2px;letter-spacing:0}
 .time .d{font-size:21px;font-weight:900}
 .del{font-size:22px;font-weight:900;padding:0 2px 0 4px}
@@ -101,11 +105,13 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
 <div class="box">
   <header>
     <div class="hleft">
-      <button class="iobtn" id="btnDl">↓ 下载</button>
-      <button class="iobtn" id="btnUl">↑ 上传</button>
+      <button class="iobtn" id="btnDl">下载</button>
     </div>
     <h1>每日学习打卡</h1>
-    <button id="openAdd">+ 批量添加</button>
+    <div class="hright">
+      <button class="iobtn soft" id="btnUl">上传</button>
+      <button id="openAdd">+</button>
+    </div>
   </header>
 
   <div class="weekbar">
@@ -114,10 +120,11 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
     <div class="arrow" id="next">›</div>
   </div>
 
-  <div class="nums"><span>已完成 <span id="dnum">0</span> / <span id="tnum">0</span></span><span id="pct">0%</span></div>
+  <div class="nums">
+    <span id="total"></span>
+    <span>已完成 <span id="dnum">0</span> / <span id="tnum">0</span>　<span id="pct">0%</span></span>
+  </div>
   <div class="bar"><div class="fill" id="fill"></div></div>
-  <div class="total" id="total"></div>
-  <div class="cheer" id="cheer"></div>
 
   <div class="sortbar">
     <span>排序</span>
@@ -127,7 +134,7 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
   <div class="subbar" id="subbar"></div>
 
   <div id="list"></div>
-  <div class="all-done" id="finish">全部完成！今天超棒！</div>
+  <div class="all-done" id="finish">加油 汤汤</div>
 </div>
 
 <div class="mask" id="mask">
@@ -153,7 +160,11 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
           <label><input type="checkbox" id="rest"> 每项后休息 5 分钟</label>
         </div>
         <div class="tip" id="tip"></div>
-        <textarea id="src" placeholder="语文&#10;练字&#10;抄写第3课生字&#10;数学&#10;口算100题&#10;英语&#10;读课文第5课"></textarea>
+        <textarea id="src" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="语文&#10;练字&#10;抄写第3课生字&#10;数学&#10;口算100题&#10;英语&#10;读课文第5课"></textarea>
+        <div class="btns">
+          <button class="btn" id="kbdBtn">唤起键盘</button>
+          <button class="btn" id="pasteBtn">粘贴</button>
+        </div>
       </div>
       <div id="pvSec" style="display:none">
         <div class="tip">点 −5 / +5 调每项时长，× 删掉这项，不合适就「全部重排」。</div>
@@ -178,6 +189,10 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
     <div class="mbody">
       <div class="dtitle" id="dtitle"></div>
       <div class="dgrid" id="dgrid"></div>
+      <div class="mrow" style="margin-top:14px">
+        <input class="inp" id="dcustom" inputmode="numeric" placeholder="手动填分钟" style="width:170px">
+        <button class="btn" id="dok">确定</button>
+      </div>
       <div class="btns"><button class="btn" id="dskip">不记用时</button></div>
     </div>
   </div>
@@ -187,15 +202,21 @@ input[type=checkbox],input[type=radio]{width:22px;height:22px}
   <div class="modal">
     <div class="mhead"><span>GitHub 同步</span><span id="sclose">✕</span></div>
     <div class="mbody">
-      <div class="tip">用 GitHub Gist 存一份作业数据，换设备或墨水屏重装后能拉回来。Token 只存在这台设备的浏览器里，不会上传给别人。</div>
       <label class="fl">GitHub Token（勾选 gist 权限）</label>
-      <input class="inp" id="tok" type="password" placeholder="ghp_xxxxxxxxxxxx">
+      <input class="inp" id="tok" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="ghp_xxxxxxxxxxxx">
+      <div class="btns"><button class="btn" id="ptok">粘贴</button></div>
       <label class="fl">Gist ID（首次留空，上传后自动填）</label>
-      <input class="inp" id="gid" placeholder="留空则新建">
+      <input class="inp" id="gid" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="留空则新建">
+      <div class="btns"><button class="btn" id="pgid">粘贴</button></div>
       <div class="btns">
         <button class="btn solid" id="doDl">↓ 下载到本地</button>
         <button class="btn" id="doUl">↑ 上传到云端</button>
         <button class="btn" id="sclose2">关闭</button>
+      </div>
+      <div class="btns">
+        <button class="btn" id="expBak">导出备份文件</button>
+        <button class="btn" id="impBak">从备份恢复</button>
+        <input type="file" id="bakFile" accept=".json,application/json" style="display:none">
       </div>
       <div class="status" id="stx"></div>
     </div>
@@ -269,7 +290,7 @@ function sorted(){
 
 function render(){
   var list=document.getElementById('list');list.innerHTML='';
-  if(!tasks.length) list.innerHTML='<div class="empty">还没有任务，点右上角「+ 批量添加」</div>';
+  if(!tasks.length) list.innerHTML='<div class="empty">加油！我的宝贝汤汤！你是最棒的！</div>';
   document.getElementById('sTime').className=sortBy==='time'?'on':'';
   document.getElementById('sSubj').className=sortBy==='subj'?'on':'';
   sorted().forEach(function(o){
@@ -286,7 +307,7 @@ function render(){
     }
     row.innerHTML='<div class="cb">'+(t.done?'✓':'')+'</div>'+
       '<div class="main"><div class="l1">'+(sub?'<span class="subj">'+sub+'</span>':'')+
-      '<span class="txt">'+esc(t.txt)+(t.stamp?' <span class="stamp">✓'+t.stamp+'</span>':'')+'</span></div>'+actLine+'</div>'+
+      '<span class="txt">'+esc(t.txt)+'</span></div>'+actLine+'</div>'+
       '<span class="time" data-i="'+i+'">'+(t.time?'<span class="d">【'+durOf(t.time)+'分】</span>'+t.time:'设时间')+'</span>'+
       '<span class="del" data-i="'+i+'">×</span>';
     list.appendChild(row);
@@ -305,7 +326,6 @@ function render(){
   document.getElementById('pct').textContent=p+'%';
   document.getElementById('fill').style.width=p+'%';
   document.getElementById('finish').className='all-done'+(tasks.length&&d===tasks.length?' show':'');
-  document.getElementById('cheer').textContent=tasks.length===0?'':(d===tasks.length?'全部搞定，去玩吧！':cheers[Math.min(Math.floor(d/tasks.length*4),3)]);
 }
 
 document.getElementById('list').onclick=function(e){
@@ -319,7 +339,7 @@ document.getElementById('list').onclick=function(e){
   if(tasks[idx].done){
     tasks[idx].done=false;tasks[idx].stamp='';tasks[idx].act=0;tasks[idx].over=0;save();render();
   }else{
-    tasks[idx].done=true;tasks[idx].stamp=nowHM();save();render();
+    tasks[idx].done=true;save();render();
     askDuration(idx);
   }
 };
@@ -339,8 +359,19 @@ function askDuration(i){
     b.onclick=function(){setAct(d)};
     g.appendChild(b);
   });
+  document.getElementById('dcustom').value='';
   document.getElementById('dmask').className='mask show';
+  setTimeout(function(){var c=$('dcustom');try{c.focus();c.click()}catch(e){}},80);
 }
+document.getElementById('dok').onclick=function(){
+  var c=$('dcustom');
+  var v=parseInt(c.value,10);
+  if(!v||v<1||v>600){alert('填 1-600 之间的分钟数');return}
+  setAct(v);
+};
+document.getElementById('dcustom').onkeydown=function(e){
+  if(e.keyCode===13){e.preventDefault();document.getElementById('dok').click()}
+};
 function setAct(d){
   if(pendIdx>=0&&tasks[pendIdx]){
     tasks[pendIdx].act=d;
@@ -517,8 +548,8 @@ function openSync(){
   smask.className='mask show';
 }
 function closeSync(){smask.className='mask'}
-$('btnDl').onclick=function(){openSync();if(localStorage.getItem('gh_token'))doDownload();else sts('先填 Token；首次下载还要填另一台设备上传得到的 Gist ID。')};
-$('btnUl').onclick=function(){openSync();if(localStorage.getItem('gh_token'))doUpload();else sts('先填 Token（GitHub → Settings → Developer settings → Personal access tokens，勾选 gist）')};
+$('btnDl').onclick=function(){openSync();if(localStorage.getItem('gh_token'))doDownload();else sts('请先填写 Token 和 Gist ID')};
+$('btnUl').onclick=function(){openSync();if(localStorage.getItem('gh_token'))doUpload();else sts('请先填写 Token')};
 $('sclose').onclick=closeSync;$('sclose2').onclick=closeSync;
 $('doDl').onclick=function(){saveCred();doDownload()};
 $('doUl').onclick=function(){saveCred();doUpload()};
@@ -582,6 +613,64 @@ function doDownload(){
     sts('已下载 ✔ 合并 '+n+' 天的数据到本机');
   });
 }
+
+/* ---- 墨水屏输入兼容 + 免键盘入口 ---- */
+function bindFocusFix(){
+  var els=document.querySelectorAll('input,textarea');
+  for(var i=0;i<els.length;i++){
+    (function(el){
+      if(el.type==='file')return;
+      el.setAttribute('inputmode','text');
+      el.setAttribute('autocomplete','off');
+      el.setAttribute('autocorrect','off');
+      el.setAttribute('spellcheck','false');
+      function kick(){setTimeout(function(){try{el.focus()}catch(e){}},30)}
+      el.addEventListener('touchstart',kick,false);
+      el.addEventListener('mousedown',kick,false);
+      el.addEventListener('click',kick,false);
+    })(els[i]);
+  }
+}
+function pasteInto(el){
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){el.value=String(t).trim()},function(){alert('读不到剪贴板，请长按输入框选「粘贴」')});
+  }else{alert('请长按输入框，选择「粘贴」')}
+}
+function readTextFile(file,cb){
+  var r=new FileReader();
+  r.onload=function(){cb(String(r.result))};
+  r.readAsText(file,'utf-8');
+}
+function saveTextFile(name,text){
+  var b=new Blob([text],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a)},500);
+}
+document.getElementById('kbdBtn').onclick=function(){
+  var t=$('src');t.focus();t.click();
+};
+document.getElementById('pasteBtn').onclick=function(){pasteInto($('src'))};
+document.getElementById('ptok').onclick=function(){pasteInto($('tok'))};
+document.getElementById('pgid').onclick=function(){pasteInto($('gid'))};
+document.getElementById('expBak').onclick=function(){
+  saveTextFile('打卡备份_'+sel+'.json',JSON.stringify(collect()));
+  sts('已导出备份文件（在下载目录）');
+};
+document.getElementById('impBak').onclick=function(){$('bakFile').click()};
+document.getElementById('bakFile').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  readTextFile(f,function(s){
+    var o=null;try{o=JSON.parse(s)}catch(err){return sts('备份文件解析失败')}
+    var n=0;
+    for(var k in o){if(k.indexOf('homework_')===0){localStorage.setItem(k,JSON.stringify(o[k]));n++}}
+    load();renderWeek();render();
+    sts('已从备份恢复 '+n+' 天数据');
+    e.target.value='';
+  });
+};
+bindFocusFix();
 
 load();renderWeek();render();
 
